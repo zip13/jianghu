@@ -127,6 +127,7 @@ sub("if(document.addEventListener)document.addEventListener('keydown',e=>{if(!$(
 # gameplay fun layer
 exec((ART / 'fun.py').read_text(encoding='utf-8'))
 exec((ART / 'bag.py').read_text(encoding='utf-8'))
+exec((ART / 'world.py').read_text(encoding='utf-8'))
 
 DST.write_text(s, encoding='utf-8')
 print('written', DST, f'{len(s.encode()) / 1e6:.2f} MB', {k: len(v) // 1024 for k, v in art.items()})

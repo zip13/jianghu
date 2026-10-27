@@ -1,0 +1,1760 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正方体的秘密</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="gfont" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2a2521;
+    --ink-soft: #6b6158;
+    --paper: #f7f2e7;
+    --orange: #e8641e;
+    --bar: rgba(255, 252, 246, 0.86);
+    --bar-line: rgba(42, 37, 33, 0.10);
+    --shadow: 0 12px 32px rgba(60, 45, 30, 0.20), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #d9ccb6; color: var(--ink);
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; -webkit-font-smoothing: antialiased; }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; touch-action: none; outline: none; }
+
+  .brand { position: fixed; left: 16px; top: 14px; padding: 6px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); font-size: 13px;
+    letter-spacing: .08em; color: var(--ink-soft); user-select: none; }
+
+  .hint { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); padding: 9px 16px;
+    border-radius: 999px; background: rgba(42, 37, 33, 0.84); color: #fff7ec; font-size: 14px;
+    letter-spacing: .04em; pointer-events: none; white-space: nowrap; transition: opacity .4s, transform .4s; }
+  .hint.off { opacity: 0; transform: translate(-50%, 8px); }
+
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #d9ccb6;
+    font-size: 15px; letter-spacing: .2em; color: var(--ink-soft); transition: opacity .6s; z-index: 10; }
+  #loading.off { opacity: 0; pointer-events: none; }
+
+  .tb { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; align-items: center;
+    gap: 2px; padding: 6px; border-radius: 16px; background: var(--bar); backdrop-filter: blur(14px);
+    box-shadow: var(--shadow); transition: opacity .5s, transform .5s; max-width: calc(100vw - 32px);
+    overflow-x: auto; scrollbar-width: none; user-select: none; }
+  .tb.off { opacity: 0; transform: translate(-50%, 24px); pointer-events: none; }
+  .tb button { height: 36px; min-width: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent;
+    color: var(--ink); font: inherit; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+  .tb button:hover { background: rgba(42, 37, 33, 0.07); }
+  .tb button:disabled { opacity: .35; cursor: default; background: transparent; }
+  .tb button.on { background: var(--ink); color: #fff7ec; }
+  .tb button.accent { background: var(--orange); color: #fff; }
+  .tb button.accent:hover { background: #d4561a; }
+  .tb button.accent:disabled { background: var(--orange); }
+  .tb svg { width: 18px; height: 18px; flex: none; }
+  #bVoice .x { display: none; }
+  #bVoice.muted .x { display: inline; }
+  #bVoice.muted .w1, #bVoice.muted .w2 { display: none; }
+  #bVoice.muted { color: var(--ink-soft); }
+  .tb .sep { width: 1px; height: 22px; background: var(--bar-line); margin: 0 6px; flex: none; }
+  .tb .label { min-width: 150px; padding: 0 8px; font-size: 14px; text-align: center; white-space: nowrap; }
+  .tb .label b { font-family: "Times New Roman", serif; font-weight: 400; color: var(--orange); margin-right: 6px; font-size: 16px; }
+  .ab { display: flex; align-items: center; gap: 2px; padding-left: 2px; }
+  .ab.hide { display: none; }
+  .ab .k { font-family: "Times New Roman", serif; font-style: italic; font-size: 18px; padding: 0 4px 0 8px; }
+  .ab output { min-width: 34px; text-align: center; font-family: "Times New Roman", serif; font-size: 18px; }
+  .ab button { min-width: 28px; padding: 0; font-size: 18px; }
+  .ab .k { font-family: inherit; font-style: normal; font-size: 14px; color: var(--ink-soft); white-space: nowrap; }
+  .tb button.hide { display: none; }
+  @media (max-width: 1280px) { .tb .txt { display: none; } .ab .k { font-size: 13px; } }
+
+  .menu { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); min-width: 260px; padding: 8px;
+    border-radius: 14px; background: var(--bar); backdrop-filter: blur(14px); box-shadow: var(--shadow);
+    transition: opacity .25s, transform .25s; }
+  .menu.off { opacity: 0; transform: translate(-50%, 8px); pointer-events: none; }
+  .menu button { display: flex; width: 100%; align-items: baseline; gap: 10px; padding: 10px 12px; border: 0;
+    background: transparent; font: inherit; font-size: 14px; color: var(--ink); border-radius: 8px; cursor: pointer; text-align: left; }
+  .menu button:hover { background: rgba(42, 37, 33, 0.07); }
+  .menu button.cur { color: var(--orange); }
+  .menu button i { font-style: normal; font-family: "Times New Roman", serif; color: var(--ink-soft); margin-left: auto; }
+
+  @media (max-width: 640px) {
+    .tb .label { min-width: 0; }
+    .tb .txt { display: none; }
+    .hint { bottom: 84px; font-size: 13px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div class="brand">立体书 · 正方体的秘密</div>
+<div id="hint" class="hint off"></div>
+<div id="loading">正在装订书页…</div>
+
+<div id="menu" class="menu off"></div>
+
+
+<div id="tb" class="tb off">
+  <button id="bMenu" title="目录"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button id="bPrev" title="上一页 (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="label" id="pageLabel"></div>
+  <button id="bNext" title="下一页 (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+  <span class="sep"></span>
+  <button id="bBuild" title="平面 / 立体 (Enter)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span class="txt">立体</span></button>
+  <button id="bPlay" class="accent" title="播放动画 (空格)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg><span class="txt">播放</span></button>
+  <button id="bView" title="复位视角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
+  <button id="bVoice" title="语音讲解"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M15.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="x" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+  <button id="bXray" class="hide" title="透视 (X)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke-dasharray="2 2"/></svg><span class="txt">透视</span></button>
+  <button id="bUnfold" class="hide" title="展开 / 折起 (U)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M9 3h6v6H9zM3 9h6v6H3zM9 9h6v6H9zM15 9h6v6h-6zM9 15h6v6H9z"/></svg><span class="txt">展开</span></button>
+  <div id="ab" class="ab hide">
+    <span class="sep"></span>
+    <span class="k">1 的对面</span><button data-q="1" data-d="-1">−</button><output id="g1"></output><button data-q="1" data-d="1">+</button>
+    <span class="k">2 的对面</span><button data-q="2" data-d="-1">−</button><output id="g2"></output><button data-q="2" data-d="1">+</button>
+    <span class="k">3 的对面</span><button data-q="3" data-d="-1">−</button><output id="g3"></output><button data-q="3" data-d="1">+</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ================================================================
+   尺寸与常量（场景单位 ≈ 厘米）
+   ================================================================ */
+const W = 10, H = 14;               // 单页宽高
+const T = 0.55;                     // 单侧书页厚度
+const CV = 0.12, MG = 0.28;         // 封面板厚度、封面外延
+const CW = 1100, CH = 1540;         // 页面贴图像素
+const PX = CW / W;                  // 每单位像素
+const LIFT = 1.3;                   // 立起后模型整体离开书页的高度
+const CS = 2.2;                     // 正方体棱长
+const ZC = -1.4;                    // 展开图中"上面"在右页上的位置（页面坐标 z）
+const Z_FOLD = 2.6;                 // 折好后正方体向读者方向移动的距离，让它居中
+
+const C = {
+  ink: '#2a2521', soft: '#5f564e', gray: '#9b9187', line: '#d8cdbb',
+  orange: '#e8641e', orangeL: '#f6a35d', paper: '#f7f2e7', card: '#fbf7ee',
+  hl: 'rgba(255, 158, 64, 0.30)', box: '#fbefdc', green: '#2f8f6f',
+};
+const F_CN = '"Noto Serif SC", "Songti SC", "SimSun", serif';
+const F_HAND = '"Ma Shan Zheng", "KaiTi", "STKaiti", cursive';
+const F_MATH = '"Times New Roman", "Times", "Noto Serif SC", serif';
+
+/* ================================================================
+   状态
+   ================================================================ */
+const S = {
+  opened: false, spread: 0, busy: false, playing: false,
+  built: [false, false, false, false],
+  step: [0, 0, 0, 0],
+  view: 'read', sub: null,
+  xray: false, unfold: false,       // 当前立体正方体：透视 / 展开
+  pic: [0, 0, 0, 0],                // 左页当前高亮的观察图（1~3）
+  solved: false,                    // 第 2 节：推理是否完成
+  guess: { 1: 0, 2: 0, 3: 0 },      // 第 3 节：学生填写的对面（0 = 未填）
+  res: {}, checked: false,          // 第 3 节：验证结果
+};
+
+
+/* ================================================================
+   工具：缓动、补间
+   ================================================================ */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = {
+  lin: t => t,
+  io: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  out: t => 1 - Math.pow(1 - t, 3),
+  back: t => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+  bounce: t => {
+    const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) return n * (t -= 1.5 / d) * t + .75;
+    if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + .9375;
+    return n * (t -= 2.625 / d) * t + .984375;
+  },
+};
+const CANCEL = Symbol('cancel');
+const tweens = [];
+function tween(dur, fn, ez = ease.io, ctl = null) {
+  return new Promise((res, rej) => tweens.push({ t0: performance.now(), dur, fn, ez, res, rej, ctl }));
+}
+const wait = (ms, ctl) => tween(ms, () => {}, ease.lin, ctl);
+function runTweens(now) {
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const t = tweens[i];
+    if (t.ctl && t.ctl.cancelled) { tweens.splice(i, 1); t.rej(CANCEL); continue; }
+    const p = Math.min(1, (now - t.t0) / t.dur);
+    t.fn(t.ez(p));
+    if (p >= 1) { tweens.splice(i, 1); t.res(); }
+  }
+}
+
+const fmt = n => (n < 0 ? '−' : '') + (Number.isInteger(n) ? Math.abs(n) : Math.abs(n).toFixed(1));
+const paren = n => n < 0 ? `(${fmt(n)})` : fmt(n);
+
+/* ================================================================
+   排版引擎：中文 + 数学混排（斜体字母、分数、高亮）
+   语法：{b:粗体} {o:橙色} {g:灰色} {w:白色}  ⟦分子¦分母⟧  \n 换行
+   ================================================================ */
+const USED = new Set();
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const OPS = '=+−×÷<>≤≥↔';
+const NO_START = '，。、；：！？）》”,.;:!?)';
+
+function tokenize(str) {
+  USED.add(str);
+  const toks = [], st = [];
+  const cur = () => ({ bold: st.includes('b'), col: [...st].reverse().map(k => ({ o: C.orange, g: C.gray, w: '#fff', t: C.green })[k]).find(Boolean) || null });
+  let i = 0;
+  while (i < str.length) {
+    const c = str[i];
+    if (c === '{' && str[i + 2] === ':') { st.push(str[i + 1]); i += 3; continue; }
+    if (c === '}' && st.length) { st.pop(); i++; continue; }
+    if (c === '\n') { toks.push({ t: 'nl' }); i++; continue; }
+    if (c === '⟦') {
+      const j = str.indexOf('⟧', i); const [num, den] = str.slice(i + 1, j).split('¦');
+      toks.push({ t: 'frac', num, den, ...cur() }); i = j + 1; continue;
+    }
+    const prev = [...toks].reverse().find(t => t.t !== 'sp');
+    const unary = c === '−' && /[0-9]/.test(str[i + 1] || '') &&
+      (!prev || (prev.t === 'text' && !/[A-Za-z0-9)|]$/.test(prev.s)));
+    if (/[A-Za-z0-9.]/.test(c) || unary) {
+      let j = i + 1; const re = /[A-Za-z]/.test(c) ? /[A-Za-z]/ : /[0-9.]/;
+      while (j < str.length && re.test(str[j])) j++;
+      toks.push({ t: 'text', s: str.slice(i, j), ...cur() }); i = j; continue;
+    }
+    if (c === ' ') { toks.push({ t: 'sp', s: ' ' }); i++; continue; }
+    toks.push({ t: 'text', s: c, ...cur() }); i++;
+  }
+  return toks;
+}
+function tokFont(t, size) {
+  const b = t.bold ? 'bold ' : '';
+  if (/^[A-Za-z]+$/.test(t.s)) return `italic ${b}${Math.round(size * 1.1)}px ${F_MATH}`;
+  if (/^[−0-9.]+$/.test(t.s) || /^[+−=()|÷×<>\/:%≤≥]$/.test(t.s)) return `${b}${Math.round(size * 1.08)}px ${F_MATH}`;
+  return `${t.bold ? 700 : 400} ${size}px ${F_CN}`;
+}
+function inlineW(ctx, str, size) { return tokenize(str).reduce((w, t) => w + tokW(ctx, t, size), 0); }
+function drawInline(ctx, str, x, base, size, color) {
+  for (const t of tokenize(str)) { drawTok(ctx, t, x, base, size, color); x += tokW(ctx, t, size); }
+}
+function tokW(ctx, t, size) {
+  if (t.t === 'nl') return 0;
+  if (t.t === 'sp') return size * 0.22;
+  if (t.t === 'frac') { const s2 = size * 0.8; return Math.max(inlineW(ctx, t.num, s2), inlineW(ctx, t.den, s2)) + size * 0.36; }
+  ctx.font = tokFont(t, size);
+  let w = ctx.measureText(t.s).width;
+  if (OPS.includes(t.s)) w += size * 0.26;
+  if (/^[A-Za-z]+$/.test(t.s)) w += size * 0.06;
+  return w;
+}
+function drawTok(ctx, t, x, base, size, color) {
+  const col = t.col || color;
+  if (t.t === 'sp' || t.t === 'nl') return;
+  if (t.t === 'frac') {
+    const s2 = size * 0.8, w = tokW(ctx, t, size), cx = x + w / 2;
+    const bar = base - size * 0.32;
+    const wn = inlineW(ctx, t.num, s2), wd = inlineW(ctx, t.den, s2);
+    drawInline(ctx, t.num, cx - wn / 2, bar - size * 0.2, s2, col);
+    drawInline(ctx, t.den, cx - wd / 2, bar + s2 * 0.98, s2, col);
+    ctx.fillStyle = col; ctx.fillRect(x + size * 0.12, bar - size * 0.03, w - size * 0.24, Math.max(2, size * 0.055));
+    return;
+  }
+  ctx.font = tokFont(t, size); ctx.fillStyle = col;
+  ctx.fillText(t.s, x + (OPS.includes(t.s) ? size * 0.13 : 0), base);
+}
+function layout(ctx, str, size, maxW, lh = size * 1.62) {
+  const lines = []; let cur = { toks: [], w: 0, frac: false };
+  for (const t of tokenize(str)) {
+    if (t.t === 'nl') { lines.push(cur); cur = { toks: [], w: 0, frac: false }; continue; }
+    t.w = tokW(ctx, t, size);
+    const noStart = t.t === 'text' && NO_START.includes(t.s);
+    if (cur.w + t.w > maxW && cur.toks.length && !noStart) {
+      lines.push(cur); cur = { toks: [], w: 0, frac: false };
+      if (t.t === 'sp') continue;
+    }
+    cur.toks.push(t); cur.w += t.w; if (t.t === 'frac') cur.frac = true;
+  }
+  if (cur.toks.length) lines.push(cur);
+  let h = 0; for (const l of lines) { l.h = l.frac ? Math.max(lh, size * 2.5) : lh; h += l.h; }
+  return { lines, h, size, w: Math.max(0, ...lines.map(l => l.w)) };
+}
+function drawLay(ctx, lay, x, top, color = C.ink, align = 'left', boxW = 0) {
+  let y = top;
+  for (const l of lay.lines) {
+    let cx = align === 'center' ? x + (boxW - l.w) / 2 : align === 'right' ? x + boxW - l.w : x;
+    const base = l.frac ? y + l.h / 2 + lay.size * 0.5 : y + l.h / 2 + lay.size * 0.36;
+    for (const t of l.toks) { drawTok(ctx, t, cx, base, lay.size, color); cx += t.w; }
+    y += l.h;
+  }
+  return y;
+}
+function para(ctx, str, x, top, maxW, size = 30, opt = {}) {
+  const lay = layout(ctx, str, size, maxW, opt.lh || size * 1.62);
+  return drawLay(ctx, lay, x, top, opt.color || C.ink, opt.align || 'left', maxW);
+}
+function text(ctx, s, x, y, font, color = C.ink, align = 'left', spacing = 0) {
+  USED.add(s);
+  ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = spacing + 'px';
+  ctx.fillText(s, x, y);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.textAlign = 'left';
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function hand(ctx, s, x, y, size, rot = -0.04, color = C.orange, align = 'left') {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); text(ctx, s, 0, 0, `${size}px ${F_HAND}`, color, align); ctx.restore();
+}
+// 手绘感马克笔高亮
+function marker(ctx, x, y, w, h) {
+  ctx.save(); ctx.fillStyle = C.hl; ctx.beginPath();
+  ctx.moveTo(x + 4, y + 3); ctx.lineTo(x + w - 2, y); ctx.lineTo(x + w + 3, y + h - 4); ctx.lineTo(x - 2, y + h);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.orange; ctx.fillRect(x - 14, y + 4, 5, h - 8);
+  ctx.restore();
+}
+
+/* ================================================================
+   纸张与页面框架
+   ================================================================ */
+const PAPER = (() => {
+  const c = mk(CW, CH), x = c.getContext('2d');
+  x.fillStyle = C.paper; x.fillRect(0, 0, CW, CH);
+  const img = x.getImageData(0, 0, CW, CH), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 9; d[i] += n; d[i + 1] += n; d[i + 2] += n * 1.1; }
+  x.putImageData(img, 0, 0);
+  x.strokeStyle = 'rgba(120, 100, 70, 0.05)'; x.lineWidth = 1;
+  for (let i = 0; i < 380; i++) {
+    const px = Math.random() * CW, py = Math.random() * CH, a = Math.random() * 6.28, l = 6 + Math.random() * 18;
+    x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + Math.cos(a) * l * .6, py + Math.sin(a + .6) * l * .6, px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke();
+  }
+  return c;
+})();
+
+function pageBase(ctx, side, pageNo, header) {
+  ctx.drawImage(PAPER, 0, 0);
+  const g = side === 'R' ? ctx.createLinearGradient(0, 0, 170, 0) : ctx.createLinearGradient(CW, 0, CW - 170, 0);
+  g.addColorStop(0, 'rgba(70, 50, 28, 0.30)'); g.addColorStop(.25, 'rgba(70, 50, 28, 0.10)'); g.addColorStop(1, 'rgba(70, 50, 28, 0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+  const g2 = side === 'R' ? ctx.createLinearGradient(CW, 0, CW - 40, 0) : ctx.createLinearGradient(0, 0, 40, 0);
+  g2.addColorStop(0, 'rgba(70, 50, 28, 0.08)'); g2.addColorStop(1, 'rgba(70, 50, 28, 0)');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, CW, CH);
+  const x0 = side === 'L' ? 120 : 140, x1 = side === 'L' ? 970 : 980;
+  if (header) {
+    text(ctx, header, side === 'L' ? x0 : x1, 84, `400 22px ${F_CN}`, C.gray, side === 'L' ? 'left' : 'right', 3);
+    ctx.fillStyle = C.line; ctx.fillRect(x0, 104, x1 - x0, 1.5);
+  }
+  if (pageNo !== '') text(ctx, String(pageNo), side === 'L' ? x0 : x1, 1484, `24px ${F_MATH}`, C.gray, side === 'L' ? 'left' : 'right');
+}
+const LX = 120, LW = 850;   // 左页正文区
+const RX = 140, RW = 840;   // 右页正文区
+
+function sectionHead(ctx, x, y, tagStr, title, sub) {
+  ctx.font = `700 22px ${F_CN}`; const tw = ctx.measureText(tagStr).width + 28;
+  rr(ctx, x, y, tw, 38, 19); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, tagStr, x + 14, y + 27, `700 22px ${F_CN}`, '#fff', 'left', 2);
+  text(ctx, title, x, y + 118, `900 62px ${F_CN}`, C.ink);
+  text(ctx, sub, x, y + 162, `italic 26px ${F_MATH}`, C.gray, 'left', 1);
+  return y + 200;
+}
+function heading(ctx, s, x, y) {
+  ctx.fillStyle = C.orange; ctx.fillRect(x, y - 24, 8, 28);
+  text(ctx, s, x + 20, y, `700 32px ${F_CN}`, C.ink, 'left', 2);
+  return y + 30;
+}
+function numDot(ctx, label, cx, cy, on) {
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2);
+  ctx.fillStyle = on ? C.orange : 'transparent'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = C.orange; ctx.stroke();
+  text(ctx, label, cx, cy + 8, `700 22px ${label.match(/\d/) ? F_MATH : F_CN}`, on ? '#fff' : C.orange, 'center');
+}
+function stepItem(ctx, label, str, x, y, maxW, on, size = 30) {
+  const lay = layout(ctx, str, size, maxW - 54);
+  if (on) marker(ctx, x - 6, y - 4, maxW + 12, lay.h + 8);
+  const firstH = lay.lines[0] ? lay.lines[0].h : size * 1.6;
+  numDot(ctx, label, x + 17, y + firstH / 2, on);
+  return drawLay(ctx, lay, x + 54, y, C.ink);
+}
+function noteBox(ctx, x, y, w, h, label) {
+  rr(ctx, x, y, w, h, 14); ctx.fillStyle = 'rgba(255, 250, 240, 0.9)'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#e3d6c2'; ctx.stroke();
+  if (label) {
+    ctx.font = `700 20px ${F_CN}`; const tw = ctx.measureText(label).width + 22;
+    rr(ctx, x + 22, y - 15, tw, 30, 6); ctx.fillStyle = C.orange; ctx.fill();
+    text(ctx, label, x + 33, y + 7, `700 20px ${F_CN}`, '#fff', 'left', 2);
+  }
+}
+
+/* ================================================================
+   正方体数据：六个面的数字、三张观察图、相对的面
+   面的代号：U 上  D 下  F 前  K 后  R 右  L 左
+   ================================================================ */
+const OPP = { U: 'D', D: 'U', F: 'K', K: 'F', R: 'L', L: 'R' };
+const PAIR = { U: 0, D: 0, F: 1, K: 1, R: 2, L: 2 };            // 三组对面
+const PAIR_TINT = ['#ffd6b0', '#cdeadc', '#ddd6f3'];
+const PAIR_LINE = ['#e8641e', '#2f8f6f', '#6d55c0'];
+// 三张观察图看到的（上, 前, 右）：①原样摆放 ②绕竖直轴转半圈 ③上下翻过来
+const VIEW_FACES = [['U', 'F', 'R'], ['U', 'K', 'L'], ['D', 'F', 'L']];
+function makeCubeData(nums, hidden = []) {
+  const key = {}; for (const k in nums) key[nums[k]] = k;
+  return { nums, key, init: hidden, hidden: new Set(hidden), tint: {} };
+}
+const CUBES = {
+  1: makeCubeData({ U: 1, F: 2, R: 3, D: 4, L: 5, K: 6 }),
+  2: makeCubeData({ U: 1, F: 2, R: 3, D: 4, L: 5, K: 6 }, ['D', 'L', 'K']),
+  3: makeCubeData({ U: 2, F: 1, R: 6, D: 5, L: 3, K: 4 }, ['K', 'D', 'R']),
+};
+const views = cd => VIEW_FACES.map(v => v.map(k => cd.nums[k]));
+// 和 q 出现在同一张图里的数，都是 q 的邻居
+function neighbors(cd, q) {
+  const s = new Set();
+  for (const v of views(cd)) if (v.includes(q)) v.forEach(n => n !== q && s.add(n));
+  return [...s].sort((a, b) => a - b);
+}
+const oppOf = (cd, q) => cd.nums[OPP[cd.key[q]]];
+
+/* ================================================================
+   平面图：展开图（与立体模型共用坐标）、斜二测观察图
+   ================================================================ */
+const pxX = x => (x + W / 2) * PX;
+const pxZ = z => (z + H / 2) * PX;
+// 展开图中各面相对"上面"的位置（单位：棱长），以及数字在展开图里的朝向
+const NET = { U: [0, 0], F: [0, 1], D: [0, 2], K: [0, -1], R: [1, 0], L: [-1, 0] };
+// FACE_ROT 让数字在折好的正方体上正立；摊平时立体模型会把它转回来，展开图里数字都是正的
+const FACE_ROT = { U: 0, F: 0, D: 0, K: Math.PI, R: Math.PI / 2, L: -Math.PI / 2 };
+// 一个面的图案：画在 (0,0)~(size,size)
+function faceArt(ctx, size, num, shown, tint) {
+  ctx.fillStyle = tint || '#fbf6ea'; ctx.fillRect(0, 0, size, size);
+  const m = size * 0.07;
+  ctx.strokeStyle = 'rgba(42, 37, 33, 0.22)'; ctx.lineWidth = size * 0.02; ctx.strokeRect(m, m, size - 2 * m, size - 2 * m);
+  text(ctx, shown ? String(num) : '?', size / 2, size * 0.69, `bold ${size * 0.56 | 0}px ${F_MATH}`, shown ? C.ink : C.gray, 'center');
+  if (shown && num === 6) { ctx.fillStyle = C.ink; ctx.fillRect(size * 0.38, size * 0.78, size * 0.24, size * 0.035); }   // 6 下加横线，免得倒过来看成 9
+}
+function flatNet(ctx, cd, alpha = 1) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  const s = CS * PX;
+  for (const k in NET) {
+    const cx = pxX(NET[k][0] * CS), cy = pxZ(ZC + NET[k][1] * CS);
+    ctx.save(); ctx.translate(cx - s / 2, cy - s / 2);   // 数字一律正立，和立体模型摊平后一致
+    faceArt(ctx, s, cd.nums[k], !cd.hidden.has(k), cd.tint[k]);
+    ctx.restore();
+    ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.strokeRect(cx - s / 2, cy - s / 2, s, s);
+  }
+  ctx.restore();
+}
+// 观察图：斜二测画出的正方体，能看到上、前、右三个面；数字随面一起斜切
+function isoCube(ctx, x, y, a, [t, f, r], on = false, label = '') {
+  const dx = a * 0.45, dy = -a * 0.34;
+  if (on) { rr(ctx, x - 22, y + dy - 22, a + dx + 44, a - dy + 44, 16); ctx.fillStyle = 'rgba(255, 170, 90, 0.22)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.orange; ctx.stroke(); }
+  const poly = (pts, fill) => {
+    ctx.beginPath(); pts.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = C.ink; ctx.stroke();
+  };
+  poly([[x, y], [x + a, y], [x + a + dx, y + dy], [x + dx, y + dy]], '#fffaf0');
+  poly([[x, y], [x + a, y], [x + a, y + a], [x, y + a]], '#f6eedd');
+  poly([[x + a, y], [x + a + dx, y + dy], [x + a + dx, y + a + dy], [x + a, y + a]], '#e9dfcb');
+  // 数字正立写在各面中心（斜切后的数字太扁，学生不易认）
+  const digit = (n, cx, cy, size) => {
+    text(ctx, String(n), cx, cy + size * 0.36, `bold ${size | 0}px ${F_MATH}`, C.ink, 'center');
+    if (n === 6) { ctx.fillStyle = C.ink; ctx.fillRect(cx - size * 0.13, cy + size * 0.46, size * 0.26, Math.max(3, size * 0.05)); }
+  };
+  digit(f, x + a / 2, y + a / 2, a * 0.5);
+  digit(t, x + a / 2 + dx / 2, y + dy / 2, a * 0.3);
+  digit(r, x + a + dx / 2, y + a / 2 + dy / 2, a * 0.34);
+  if (label) text(ctx, label, x + (a + dx) / 2, y + a + 52, `700 30px ${F_CN}`, on ? C.orange : C.soft, 'center');
+}
+// 左页一行三张观察图
+function pictures(ctx, cd, y, on) {
+  const a = 180, w = a * 1.45, gap = (LW - 3 * w) / 2;
+  views(cd).forEach((v, i) => isoCube(ctx, LX + 10 + i * (w + gap), y + 76, a, v, on === i + 1, `图${'①②③'[i]}`));
+}
+// 小展开图（装饰用）
+function miniNet(ctx, x, y, s, color) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+  for (const [c, r] of [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2], [1, 3]]) ctx.strokeRect(x + c * s, y + r * s, s, s);
+  ctx.restore();
+}
+
+// 播放讲解时印在右页下半部分的字幕：步骤号 + 标题 + 讲解 + 公式
+function pageSubtitle(ctx, i) {
+  if (!S.sub || S.sub.i !== i) return false;
+  const steps = NARR[i](), k = S.sub.k, s = steps[k - 1];
+  const x = RX, w = RW, top = 1100, FS = 36;
+  const body = layout(ctx, s.b, 32, w - 64, 50);
+  const lines = [].concat(s.f).slice(0, S.sub.n ?? 99);
+  const indent = l => /^=/.test(l) ? inlineW(ctx, 'm ', FS) : 0;
+  const forms = lines.map(l => layout(ctx, l, FS, w - 64 - indent(l)));
+  const h = 80 + body.h + 12 + forms.reduce((t, f) => t + f.h, 0) + 18;
+  rr(ctx, x, top, w, h, 14); ctx.fillStyle = 'rgba(255, 249, 238, 0.96)'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = C.orange; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x + 50, top + 44, 22, 0, 7); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, String(k), x + 50, top + 56, `italic bold 30px ${F_MATH}`, '#fff', 'center');
+  text(ctx, s.t, x + 84, top + 57, `900 35px ${F_CN}`, C.ink, 'left', 3);
+  steps.forEach((_, j) => { ctx.beginPath(); ctx.arc(x + w - 34 - (steps.length - 1 - j) * 26, top + 44, 8, 0, 7); ctx.fillStyle = j < k ? C.orange : '#e3d8c6'; ctx.fill(); });
+  drawLay(ctx, body, x + 32, top + 76, C.soft);
+  const fy = top + 76 + body.h + 6;
+  ctx.strokeStyle = '#e0d2bd'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(x + 32, fy); ctx.lineTo(x + w - 32, fy); ctx.stroke(); ctx.setLineDash([]);
+  let ly = fy + 4;
+  forms.forEach((f, j) => { ly = drawLay(ctx, f, x + 32 + indent(lines[j]), ly, C.ink); });
+  return true;
+}
+// 立体化后平面底图淡化；播放讲解时完全隐藏，减少干扰
+const ghost = i => S.sub && S.sub.i === i ? 0 : 0.16;
+function caption(ctx, label, s, y) {
+  text(ctx, label, RX, y, `700 24px ${F_CN}`, C.ink, 'left', 2);
+  ctx.font = `700 24px ${F_CN}`; const w = ctx.measureText(label).width;
+  text(ctx, s, RX + w + 18, y, `24px ${F_CN}`, C.soft);
+}
+
+/* ================================================================
+   页面内容
+   ================================================================ */
+const HEAD_L = '第二章 · 认识立体图形', HEAD_R = '正方体的秘密 · 立体数学';
+// 带左侧橙条的说明框
+function infoBox(ctx, str, y, size = 30) {
+  const lay = layout(ctx, str, size, LW - 70);
+  rr(ctx, LX, y, LW, lay.h + 36, 10); ctx.fillStyle = C.box; ctx.fill();
+  ctx.fillStyle = C.orange; ctx.fillRect(LX, y, 8, lay.h + 36);
+  drawLay(ctx, lay, LX + 40, y + 18);
+  return y + lay.h + 36;
+}
+// 结果框
+function resultBox(ctx, str, y, done) {
+  rr(ctx, LX, y, LW, 110, 14); ctx.lineWidth = 3; ctx.strokeStyle = done ? C.orange : '#e3d6c2'; ctx.stroke();
+  ctx.fillStyle = done ? 'rgba(255, 240, 222, 0.9)' : 'rgba(255, 250, 240, 0.7)'; ctx.fill();
+  drawLay(ctx, layout(ctx, str, done ? 38 : 30, LW - 60), LX + 36, y + (done ? 20 : 30));
+}
+// ---- 扉页
+function drawL0(ctx) {
+  pageBase(ctx, 'L', '', '');
+  const cx = LX + LW / 2;
+  text(ctx, '初中数学 · 互动立体书', cx, 300, `400 26px ${F_CN}`, C.gray, 'center', 8);
+  text(ctx, '正方体的秘密', cx, 470, `900 100px ${F_CN}`, C.ink, 'center', 6);
+  text(ctx, 'Unfolding the Cube', cx, 540, `italic 34px ${F_MATH}`, C.soft, 'center', 2);
+  isoCube(ctx, cx - 300, 720, 170, [1, 2, 3]);
+  miniNet(ctx, cx + 90, 610, 62, C.orange);
+  ctx.save(); ctx.strokeStyle = C.orange; ctx.lineWidth = 3; ctx.setLineDash([8, 8]);
+  ctx.beginPath(); ctx.moveTo(cx - 20, 760); ctx.quadraticCurveTo(cx + 30, 700, cx + 80, 740); ctx.stroke(); ctx.restore();
+  hand(ctx, '看一看、拆一拆、推一推', cx, 1040, 50, -0.03, C.orange, 'center');
+  text(ctx, '第 2 册 · 示例章节', cx, 1380, `400 24px ${F_CN}`, C.gray, 'center', 6);
+}
+// ---- 目录
+function drawR0(ctx) {
+  pageBase(ctx, 'R', 'i', '');
+  text(ctx, '目  录', RX, 250, `900 64px ${F_CN}`, C.ink, 'left', 6);
+  text(ctx, 'Contents', RX + 230, 250, `italic 30px ${F_MATH}`, C.gray);
+  const items = [['1', '认识正方体', '2'], ['2', '三个方向推数字', '4'], ['3', '猜一猜', '6']];
+  let y = 400;
+  for (const [n, t, p] of items) {
+    text(ctx, n, RX, y, `italic 52px ${F_MATH}`, C.orange);
+    text(ctx, t, RX + 66, y - 4, `700 36px ${F_CN}`, C.ink);
+    ctx.font = `700 36px ${F_CN}`; const tw = ctx.measureText(t).width;
+    ctx.fillStyle = C.gray; for (let x = RX + 66 + tw + 24; x < RX + RW - 60; x += 14) ctx.fillRect(x, y - 12, 3, 3);
+    text(ctx, p, RX + RW, y - 4, `32px ${F_MATH}`, C.ink, 'right');
+    y += 96;
+  }
+  const by = 760; noteBox(ctx, RX, by, RW, 360, '怎么读这本书');
+  const tips = [
+    ['1', '{b:点击右页插图} —— 展开图会折成立体的正方体'],
+    ['2', '{b:按住拖动} —— 旋转视角；{b:滚轮} —— 缩放'],
+    ['3', '{b:底部 透视 / 展开} —— 看穿正方体，或把它摊平'],
+    ['4', '{b:底部 ▶} —— 播放讲解动画，配字幕和语音'],
+  ];
+  let ty = by + 50;
+  for (const [n, s] of tips) ty = stepItem(ctx, n, s, RX + 30, ty, RW - 60, false, 28) + 18;
+  hand(ctx, '从第 2 页开始吧 →', RX + RW, 1330, 44, -0.05, C.orange, 'right');
+}
+
+// ---- 第 1 节：认识正方体
+function drawL1(ctx) {
+  pageBase(ctx, 'L', 2, HEAD_L);
+  const st = S.step[1];
+  let y = sectionHead(ctx, LX, 150, '第 1 节', '认识正方体', 'The Cube');
+  y = para(ctx, '正方体有 6 个面、12 条棱、8 个顶点，6 个面都是大小相同的正方形。', LX, y, LW, 30) + 26;
+  y = infoBox(ctx, '{b:相邻的面}：有一条公共棱的两个面。\n{b:相对的面}：没有公共棱、互相平行的两个面，比如上面和下面。', y) + 62;
+  y = heading(ctx, '看一看', LX, y) + 18;
+  y = stepItem(ctx, '1', '{b:六个面}：每个面写一个数，1～6 各不相同。', LX, y, LW, st === 1) + 10;
+  y = stepItem(ctx, '2', '{b:相对与相邻}：1 的邻居是 2、3、5、6，对面是 {o:4}。', LX, y, LW, st === 2) + 10;
+  y = stepItem(ctx, '3', '{b:透视}：变透明后，三组对面用彩线连起来。', LX, y, LW, st === 3) + 10;
+  y = stepItem(ctx, '4', '{b:展开}：沿棱剪开、铺平，得到展开图。', LX, y, LW, st === 4) + 40;
+  const ny = Math.max(y, 1170);
+  noteBox(ctx, LX, ny, LW, 220, '记一记');
+  para(ctx, '展开图里，同一行或同一列中{o:隔着一个面}的两个面，就是相对的面。', LX + 30, ny + 36, LW - 60, 30);
+  hand(ctx, '相对的面不会挨在一起！', LX + LW - 20, ny + 182, 38, -0.05, C.orange, 'right');
+}
+function drawR1(ctx) {
+  pageBase(ctx, 'R', 3, HEAD_R);
+  const built = S.built[1];
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  flatNet(ctx, CUBES[1], built ? ghost(1) : 1);
+  if (pageSubtitle(ctx, 1)) return;
+  caption(ctx, '图 1', '正方体的一种展开图', 1330);
+  hand(ctx, built ? '试试底部的「透视」「展开」，点 ▶ 听讲解' : '点一下展开图，把它折成正方体 ↗', RX + RW, 1410, 38, -0.04, C.orange, 'right');
+}
+
+// ---- 第 2 节：三个方向推数字
+function drawL2(ctx) {
+  pageBase(ctx, 'L', 4, HEAD_L);
+  const st = S.step[2], cd = CUBES[2];
+  let y = sectionHead(ctx, LX, 150, '第 2 节', '三个方向推数字', 'Reasoning from Three Views');
+  y = infoBox(ctx, '{b:问题}　正方体六个面上分别写着 1～6。从三个方向看到的样子如下，1、2、3 的对面各是几？', y) + 24;
+  pictures(ctx, cd, y, S.pic[2]);
+  y += 330;
+  y = heading(ctx, '推理过程', LX, y + 20) + 16;
+  const nb = q => neighbors(cd, q).join('、');
+  y = stepItem(ctx, '1', '{b:找邻居}　同一张图里看到的三个面，两两相邻。', LX, y, LW, st === 1) + 6;
+  y = stepItem(ctx, '2', `{b:1 的对面}　1 的邻居：${nb(1)}，对面是 {o:${oppOf(cd, 1)}}。`, LX, y, LW, st === 2) + 6;
+  y = stepItem(ctx, '3', `{b:2 的对面}　2 的邻居：${nb(2)}，对面是 {o:${oppOf(cd, 2)}}。`, LX, y, LW, st === 3) + 6;
+  y = stepItem(ctx, '4', `{b:配对}　剩下的 3 和 {o:${oppOf(cd, 3)}} 互为对面。`, LX, y, LW, st === 4) + 30;
+  resultBox(ctx, S.solved ? [1, 2, 3].map(q => `${q} ↔ {o:${oppOf(cd, q)}}`).join('　　') : '{g:点 ▶ 播放推理过程，揭晓答案}', y, S.solved);
+}
+function drawR2(ctx) {
+  pageBase(ctx, 'R', 5, HEAD_R);
+  const built = S.built[2];
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  flatNet(ctx, CUBES[2], built ? ghost(2) : 1);
+  if (pageSubtitle(ctx, 2)) return;
+  caption(ctx, '图 2', '展开图中已知 1、2、3，「?」处各是几？', 1330);
+  hand(ctx, built ? '对照左页三张图，点 ▶ 看推理' : '点一下展开图，把它折成正方体 ↗', RX + RW, 1410, 38, -0.04, C.orange, 'right');
+}
+
+// ---- 第 3 节：猜一猜
+function drawL3(ctx) {
+  pageBase(ctx, 'L', 6, HEAD_L);
+  const st = S.step[3], cd = CUBES[3];
+  let y = sectionHead(ctx, LX, 150, '第 3 节', '猜一猜', 'Your Turn');
+  y = para(ctx, '换一个正方体。先自己推理，在底部工具栏里填出 1、2、3 的对面，再点 ▶ 验证。', LX, y, LW, 30) + 6;
+  pictures(ctx, cd, y, S.pic[3]);
+  y += 330;
+  y = heading(ctx, '我的答案', LX, y + 20) + 16;
+  for (let q = 1; q <= 3; q++) {
+    const g = S.guess[q], r = S.res[q];
+    const mark = r === undefined ? '' : r ? '　{t:✓ 正确}' : `　{o:✗ 应为 ${oppOf(cd, q)}}`;
+    y = stepItem(ctx, String(q), `{b:${q} 的对面}　你填的是 ${g ? `{o:${g}}` : '{g:？}'}${mark}`, LX, y, LW, st === q) + 6;
+  }
+  y += 24;
+  const score = [1, 2, 3].filter(q => S.res[q]).length;
+  resultBox(ctx, S.checked ? `答对 {o:${score}} / 3 题` + (score === 3 ? '，太棒了！' : '，看看右边的讲解') : '{g:提示：先找出每个数的“邻居”，剩下的就是对面}', y, S.checked);
+  hand(ctx, '同一张图里的面，一定相邻！', LX + LW - 10, 1440, 38, -0.05, C.orange, 'right');
+}
+function drawR3(ctx) {
+  pageBase(ctx, 'R', 7, HEAD_R);
+  const built = S.built[3];
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  flatNet(ctx, CUBES[3], built ? ghost(3) : 1);
+  if (pageSubtitle(ctx, 3)) return;
+  caption(ctx, '图 3', '填好答案后点 ▶，逐个揭开「?」', 1330);
+  hand(ctx, built ? '工具栏里填 1、2、3 的对面 → 点 ▶' : '点一下展开图，把它折成正方体 ↗', RX + RW, 1410, 38, -0.04, C.orange, 'right');
+}
+
+const SPREADS = [
+  { title: '扉页 · 目录', L: drawL0, R: drawR0, pn: 'i' },
+  { title: '认识正方体', L: drawL1, R: drawR1, pn: '2–3' },
+  { title: '三个方向推数字', L: drawL2, R: drawR2, pn: '4–5' },
+  { title: '猜一猜', L: drawL3, R: drawR3, pn: '6–7' },
+];
+const PAGE_CANVAS = SPREADS.map(() => ({ L: mk(CW, CH), R: mk(CW, CH) }));
+
+/* ================================================================
+   three.js 场景
+   ================================================================ */
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+app.appendChild(renderer.domElement);
+const ANISO = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#d9ccb6');
+scene.fog = new THREE.Fog('#d9ccb6', 45, 95);
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 200);
+
+scene.add(new THREE.HemisphereLight('#fffaf2', '#cbbda6', 1.35));
+const sun = new THREE.DirectionalLight('#fff3e2', 2.1);
+sun.position.set(-7, 20, 9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 50 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; sun.shadow.radius = 4;
+scene.add(sun);
+
+function canvasTex(cv, repeat) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
+  return t;
+}
+
+// ---- 桌面与桌垫
+(() => {
+  const c = mk(1024, 1024), x = c.getContext('2d');
+  x.fillStyle = '#d6b88f'; x.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 300; i++) {
+    const y0 = Math.random() * 1024;
+    x.strokeStyle = `rgba(${130 + Math.random() * 40 | 0}, ${90 + Math.random() * 30 | 0}, 55, ${0.05 + Math.random() * 0.1})`;
+    x.lineWidth = 1 + Math.random() * 3; x.beginPath(); x.moveTo(0, y0);
+    for (let px = 0; px <= 1024; px += 32) x.lineTo(px, y0 + Math.sin(px * 0.006 + i) * 8);
+    x.stroke();
+  }
+  x.fillStyle = 'rgba(90, 60, 30, 0.25)'; for (let k = 1; k < 4; k++) x.fillRect(0, k * 256, 1024, 2);
+  const desk = new THREE.Mesh(new THREE.PlaneGeometry(140, 140).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ map: canvasTex(c, [8, 8]), roughness: .85 }));
+  desk.position.y = -CV - 0.06; desk.receiveShadow = true; scene.add(desk);
+
+  const s = new THREE.Shape(), w = 38, h = 26, r = 1.2;
+  s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+  s.lineTo(w / 2, h / 2 - r); s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); s.lineTo(-w / 2 + r, h / 2);
+  s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); s.lineTo(-w / 2, -h / 2 + r); s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+  const mat = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false }).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: '#9cb0a4', roughness: 1 }));
+  mat.position.y = -CV - 0.055; mat.receiveShadow = true; scene.add(mat);
+})();
+
+// ---- 材质
+const INK = '#2a2521';
+const matCream = new THREE.MeshStandardMaterial({ color: '#f3ecdd', roughness: .9 });
+const matOrange = new THREE.MeshStandardMaterial({ color: '#ec6a22', roughness: .6 });
+const matOrangeD = new THREE.MeshStandardMaterial({ color: '#c94f12', roughness: .6 });
+const matInk = new THREE.MeshStandardMaterial({ color: '#3a332d', roughness: .7 });
+const edgeMat = new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: .9 });
+const hullMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+function ink(mesh, th = 25) { mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, th), edgeMat)); return mesh; }
+function hull(mesh, s = 1.12) { const h = new THREE.Mesh(mesh.geometry, hullMat); h.scale.setScalar(s); mesh.add(h); return mesh; }
+function M(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; return m; }
+
+// ---- 书本
+const book = new THREE.Group(); scene.add(book);
+const PIV = new THREE.Vector3(0, T, 0);
+
+const edgeTex = (() => {
+  const c = mk(64, 256), x = c.getContext('2d'); x.fillStyle = '#efe7d6'; x.fillRect(0, 0, 64, 256);
+  for (let y = 0; y < 256; y += 2) { x.fillStyle = `rgba(120,100,70,${0.05 + Math.random() * 0.12})`; x.fillRect(0, y, 64, 1); }
+  return canvasTex(c);
+})();
+const blockMat = new THREE.MeshStandardMaterial({ map: edgeTex, roughness: 1 });
+const blockTop = new THREE.MeshStandardMaterial({ color: '#f4eee2', roughness: 1 });
+const clothTex = (() => {
+  const c = mk(512, 512), x = c.getContext('2d'); x.fillStyle = '#e4a93a'; x.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 512; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .08})`; x.fillRect(0, i, 512, 1); x.fillRect(i, 0, 1, 512); }
+  return canvasTex(c, [3, 3]);
+})();
+const coverMat = new THREE.MeshStandardMaterial({ map: clothTex, roughness: .9 });
+
+function blockMesh() {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(W, T, H), [blockMat, blockMat, blockTop, blockTop, blockMat, blockMat]);
+  m.castShadow = m.receiveShadow = true; return m;
+}
+// 右半：书页块 + 封底
+const rightBlock = blockMesh(); rightBlock.position.set(W / 2, T / 2, 0); book.add(rightBlock);
+const backCover = ink(M(new THREE.BoxGeometry(W + MG, CV, H + 2 * MG), coverMat)); backCover.position.set((W + MG) / 2, -CV / 2, 0); book.add(backCover);
+
+// 页面纹理（静态左右页 + 翻页正反面）
+const texL = canvasTex(PAGE_CANVAS[0].L), texR = canvasTex(PAGE_CANVAS[0].R);
+const texFF = canvasTex(PAGE_CANVAS[0].R), texFB = canvasTex(PAGE_CANVAS[0].L, [-1, 1]);
+texFB.offset.x = 1;
+const ALL_TEX = [texL, texR, texFF, texFB];
+const pageMat = map => new THREE.MeshStandardMaterial({ map, roughness: 1 });
+
+const rightPage = new THREE.Mesh(new THREE.PlaneGeometry(W, H).rotateX(-Math.PI / 2), pageMat(texR));
+rightPage.position.set(W / 2, T + 0.003, 0); rightPage.receiveShadow = true; book.add(rightPage);
+
+// 左半（绕书脊旋转）：书页块 + 封面 + 左页 —— 子物体按"打开状态"布局
+const leftHalf = new THREE.Group(); leftHalf.position.copy(PIV); book.add(leftHalf);
+const leftBlock = blockMesh(); leftBlock.position.set(-W / 2, -T / 2, 0); leftHalf.add(leftBlock);
+const frontCover = ink(M(new THREE.BoxGeometry(W + MG, CV, H + 2 * MG), coverMat)); frontCover.position.set(-(W + MG) / 2, -T - CV / 2, 0); leftHalf.add(frontCover);
+const leftPage = new THREE.Mesh(new THREE.PlaneGeometry(W, H).rotateX(-Math.PI / 2), pageMat(texL));
+leftPage.position.set(-W / 2, 0.003, 0); leftPage.receiveShadow = true; leftHalf.add(leftPage);
+
+// 封面画
+const coverArtCanvas = mk(1028, 1456);
+function drawCover() {
+  const c = coverArtCanvas, x = c.getContext('2d'), w = c.width, h = c.height;
+  x.fillStyle = '#e4a93a'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < h; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .07})`; x.fillRect(0, i, w, 1); }
+  for (let i = 0; i < w; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .07})`; x.fillRect(i, 0, 1, h); }
+  const g = x.createLinearGradient(0, 0, 90, 0); g.addColorStop(0, 'rgba(90,50,0,.35)'); g.addColorStop(1, 'rgba(90,50,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 90, h);
+  x.fillStyle = 'rgba(90,50,0,.25)'; x.fillRect(64, 0, 3, h);
+  rr(x, 150, 210, w - 260, 600, 18); x.fillStyle = '#f7f0e0'; x.fill(); x.lineWidth = 4; x.strokeStyle = INK; x.stroke();
+  text(x, '初中数学 · 互动立体书', w / 2 + 20, 300, `400 30px ${F_CN}`, C.soft, 'center', 8);
+  text(x, '正方体的秘密', w / 2 + 20, 450, `900 104px ${F_CN}`, C.ink, 'center', 6);
+  text(x, 'POP-UP MATH', w / 2 + 20, 525, `italic 36px ${F_MATH}`, C.orange, 'center', 10);
+  // 封面小插图：一个正方体 + 它的展开图
+  isoCube(x, 250, 640, 120, [1, 2, 3]);
+  miniNet(x, w / 2 + 110, 575, 50, C.orange);
+  hand(x, '拆开它，再折回去', w / 2 + 20, 1000, 60, -0.03, '#fff8ea', 'center');
+  text(x, '第 2 册', w / 2 + 20, 1320, `700 32px ${F_CN}`, '#7a4a08', 'center', 10);
+  coverTex.needsUpdate = true;
+}
+const coverTex = canvasTex(coverArtCanvas);
+const coverArt = new THREE.Mesh(new THREE.PlaneGeometry(W + MG, H + 2 * MG).rotateX(-Math.PI / 2).rotateZ(Math.PI),
+  new THREE.MeshStandardMaterial({ map: coverTex, roughness: .9 }));
+coverArt.position.set(-(W + MG) / 2, -T - CV - 0.004, 0); leftHalf.add(coverArt);
+
+// 书脊
+const spine = ink(M(new THREE.BoxGeometry(CV, 2 * T + 2 * CV, H + 2 * MG), coverMat)); book.add(spine);
+
+function setOpen(o) {
+  leftHalf.rotation.z = -Math.PI * (1 - o);
+  book.position.x = -(W / 2) * (1 - o);
+  spine.rotation.z = (Math.PI / 2) * o;
+  spine.position.set(lerp(-CV / 2, 0, o), lerp(T, -CV / 2 - 0.004, o), 0);
+}
+setOpen(0);
+
+// ---- 翻页纸（弯曲网格，正反两面）
+const SEG = 40;
+const flipGeo = (() => {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array((SEG + 1) * 2 * 3), uv = new Float32Array((SEG + 1) * 2 * 2), idx = [];
+  for (let i = 0; i <= SEG; i++) {
+    uv.set([i / SEG, 1, i / SEG, 0], i * 4);
+    if (i < SEG) { const a = i * 2, b = (i + 1) * 2, c = a + 1, d = b + 1; idx.push(a, c, b, b, c, d); }
+  }
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx); return g;
+})();
+const flipGroup = new THREE.Group(); flipGroup.position.copy(PIV); flipGroup.visible = false; book.add(flipGroup);
+const flipFront = new THREE.Mesh(flipGeo, new THREE.MeshStandardMaterial({ map: texFF, roughness: 1, side: THREE.FrontSide }));
+const flipBack = new THREE.Mesh(flipGeo, new THREE.MeshStandardMaterial({ map: texFB, roughness: 1, side: THREE.BackSide }));
+flipFront.castShadow = flipBack.castShadow = true;
+flipGroup.add(flipFront, flipBack);
+function setFlip(theta, curl) {
+  const p = flipGeo.attributes.position.array, du = W / SEG;
+  let x = 0, y = 0.008;
+  for (let i = 0; i <= SEG; i++) {
+    p.set([x, y, -H / 2, x, y, H / 2], i * 6);
+    const u = (i + .5) / SEG;
+    const a = clamp(theta + curl * u * u, 0.0, Math.PI);
+    x += Math.cos(a) * du; y += Math.sin(a) * du;
+  }
+  flipGeo.attributes.position.needsUpdate = true;
+  flipGeo.computeVertexNormals(); flipGeo.computeBoundingSphere();
+}
+
+/* ================================================================
+   页面绘制与纹理同步
+   ================================================================ */
+function redraw(i, side) {
+  const cv = PAGE_CANVAS[i][side], ctx = cv.getContext('2d');
+  ctx.textBaseline = 'alphabetic';
+  SPREADS[i][side](ctx);
+  for (const t of ALL_TEX) if (t.image === cv) t.needsUpdate = true;
+}
+function redrawAll() { SPREADS.forEach((_, i) => { redraw(i, 'L'); redraw(i, 'R'); }); drawCover(); DRAWABLES.forEach(f => f()); }
+function useImage(tex, cv) { tex.image = cv; tex.needsUpdate = true; }
+
+/* ================================================================
+   立体元件：卡片、小旗、数轴
+   ================================================================ */
+const DRAWABLES = [];
+const matCardSide = new THREE.MeshStandardMaterial({ color: '#efe6d3', roughness: 1 });
+function card(w, h, draw, res = 300) {
+  const cv = mk(Math.round(w * res), Math.round(h * res)), ctx = cv.getContext('2d');
+  const tex = canvasTex(cv);
+  const geo = new THREE.BoxGeometry(w, h, 0.025); geo.translate(0, h / 2, 0);
+  const front = new THREE.MeshStandardMaterial({ map: tex, roughness: .95 });
+  const mesh = new THREE.Mesh(geo, [matCardSide, matCardSide, matCardSide, matCardSide, front, matCardSide]);
+  mesh.castShadow = true; ink(mesh);
+  const hinge = new THREE.Group(); hinge.add(mesh);
+  const redrawCard = (fn) => { if (fn) draw = fn; ctx.clearRect(0, 0, cv.width, cv.height); draw(ctx, cv.width, cv.height); tex.needsUpdate = true; };
+  redrawCard(); DRAWABLES.push(() => redrawCard());
+  return { hinge, mesh, redraw: redrawCard };
+}
+// 卡片绘制：底色 + 居中富文本
+const cardText = (str, { bg = C.card, fg = C.ink, size = 0.5 } = {}) => (ctx, w, h) => {
+  rr(ctx, 3, 3, w - 6, h - 6, Math.min(w, h) * 0.12); ctx.fillStyle = bg; ctx.fill();
+  let fs = h * size, lay = layout(ctx, str, fs, 1e5, fs * 1.5);
+  if (lay.w > w - 24) { fs *= (w - 24) / lay.w; lay = layout(ctx, str, fs, 1e5, fs * 1.5); }
+  drawLay(ctx, lay, 12, (h - lay.h) / 2, fg, 'center', w - 24);
+};
+function floatCard(w, h, tilt = -0.3) {
+  const c = card(w, h, cardText(''));
+  c.hinge.rotation.x = tilt; c.hinge.scale.setScalar(0.001); c.hinge.visible = false;
+  c.show = async (str, opt, ctl) => {
+    c.redraw(cardText(str, opt)); c.hinge.visible = true;
+    await tween(480, p => c.hinge.scale.setScalar(Math.max(.001, p)), ease.back, ctl);
+  };
+  c.hide = async ctl => {
+    await tween(260, p => c.hinge.scale.setScalar(Math.max(.001, 1 - p)), ease.io, ctl);
+    c.hinge.visible = false;
+  };
+  c.reset = () => { c.hinge.scale.setScalar(.001); c.hinge.visible = false; };
+  return c;
+}
+function applyPop(pieces, P) {
+  for (const pc of pieces) {
+    const lp = clamp((P - pc.delay * 0.45) / 0.55, 0, 1);
+    pc.obj.visible = lp > 0.001;
+    if (pc.kind === 'grow') pc.obj.scale.y = Math.max(0.001, ease.out(lp));
+    else if (pc.kind === 'scale') pc.obj.scale.setScalar(Math.max(0.001, ease.back(lp)));
+    else pc.obj.rotation.x = -Math.PI / 2 + ((pc.rot ?? 0) + Math.PI / 2) * ease.back(lp);
+  }
+}
+// 立起后模型整体升离书页，悬空展示
+function contentRoot() {
+  const root = new THREE.Group(); root.position.set(W / 2, T + 0.004, 0); root.visible = false; book.add(root); return root;
+}
+function setLift(root, e) { root.position.y = T + 0.004 + LIFT * e; }
+const bob = (obj, ctl, h = 0.25) => { const y0 = obj.position.y; return tween(520, p => obj.position.y = y0 + Math.sin(p * Math.PI) * h, ease.lin, ctl); };
+const pulse = (obj, ctl, s = 1.5, ms = 600) => tween(ms, p => obj.scale.setScalar(1 + (s - 1) * Math.sin(p * Math.PI)), ease.lin, ctl);
+
+/* ================================================================
+   立体正方体：以"上面"为底座的展开结构
+   展开时前、后、左、右绕上面的四条棱翻平，"下面"连在前面之后，
+   正好是右页上那张十字形展开图；折起时向下合拢成正方体。
+   ================================================================ */
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const Q_FLAT = new THREE.Quaternion();
+// 展示角度：稍微转向右边，让右面也能被看到
+const qDisp = new THREE.Quaternion().setFromAxisAngle(Y_AXIS, -0.6);
+// 三张观察图对应的摆放：①原样 ②绕竖直轴转半圈 ③绕前后方向翻转半圈（上下颠倒）
+const VIEW_Q = [
+  new THREE.Quaternion(),
+  new THREE.Quaternion().setFromAxisAngle(Y_AXIS, Math.PI),
+  new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI),
+].map(q => qDisp.clone().multiply(q));
+// 各面的外法线；三根连线两端分别对着哪两个面
+const NORMAL = { U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], K: [0, 0, -1], R: [1, 0, 0], L: [-1, 0, 0] };
+const ROD_ENDS = [['U', 'D'], ['F', 'K'], ['L', 'R']];
+
+// 数字小牌：始终正对镜头，不会被半透明的面遮住
+function makeBadge(fill) {
+  const cv = mk(128, 128), tex = canvasTex(cv);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+  sp.scale.setScalar(0.62); sp.renderOrder = 10;
+  let label = '';
+  const draw = () => {
+    const x = cv.getContext('2d'); x.clearRect(0, 0, 128, 128);
+    x.beginPath(); x.arc(64, 64, 56, 0, 7); x.fillStyle = fill; x.fill();
+    x.lineWidth = 7; x.strokeStyle = '#fff'; x.stroke();
+    text(x, label, 64, 88, `bold 66px ${F_MATH}`, '#fff', 'center');
+    if (label === '6') { x.fillStyle = '#fff'; x.fillRect(50, 96, 28, 6); }
+    tex.needsUpdate = true;
+  };
+  sp.setLabel = s => { label = String(s); draw(); };
+  sp.setFill = c => { fill = c; draw(); };
+  DRAWABLES.push(draw);
+  return sp;
+}
+
+function makeCube(root, cd) {
+  const g = new THREE.Group(); g.position.set(0, CS / 2, ZC); root.add(g);   // 原点 = 折好后的正方体中心
+  const top = new THREE.Group(); g.add(top);
+  const face = {}, hinge = {};
+  const glow = new THREE.Color(C.orange);
+  const label = k => cd.hidden.has(k) ? '?' : cd.nums[k];
+  function panel(k) {
+    const cv = mk(256, 256), tex = canvasTex(cv);
+    tex.center.set(0.5, 0.5);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: .9, side: THREE.DoubleSide, transparent: true, emissive: glow, emissiveIntensity: 0 });
+    const m = ink(M(new THREE.PlaneGeometry(CS * 0.99, CS * 0.99).rotateZ(FACE_ROT[k]).rotateX(-Math.PI / 2), mat), 1);
+    const draw = () => {
+      const x = cv.getContext('2d'); x.clearRect(0, 0, 256, 256);
+      faceArt(x, 256, cd.nums[k], !cd.hidden.has(k), cd.tint[k]); tex.needsUpdate = true;
+    };
+    draw(); DRAWABLES.push(draw);
+    face[k] = { mesh: m, mat, tex, draw };
+    return m;
+  }
+  top.add(panel('U'));
+  // 铰链：位置在棱上；sign 决定向下折的方向
+  const addHinge = (parent, k, at, axis, sign) => {
+    const h = new THREE.Group(); h.position.copy(at); parent.add(h);
+    const p = panel(k); p.position.copy(at).setLength(CS / 2); h.add(p);   // 面心在棱外侧半个棱长处
+    hinge[k] = { h, axis, sign }; return h;
+  };
+  const hF = addHinge(top, 'F', new THREE.Vector3(0, 0, CS / 2), 'x', 1);
+  addHinge(top, 'K', new THREE.Vector3(0, 0, -CS / 2), 'x', -1);
+  addHinge(top, 'R', new THREE.Vector3(CS / 2, 0, 0), 'z', -1);
+  addHinge(top, 'L', new THREE.Vector3(-CS / 2, 0, 0), 'z', 1);
+  const hD = new THREE.Group(); hD.position.set(0, 0, CS); hF.add(hD);
+  const pD = panel('D'); pD.position.set(0, 0, CS / 2); hD.add(pD);
+  hinge.D = { h: hD, axis: 'x', sign: 1 };
+
+  // 三组对面的连线（穿过中心），两端各挂一个数字小牌
+  const axes = new THREE.Group(); g.add(axes);
+  const rodBadges = [];
+  const lines = [0, 1, 2].map(i => {
+    const mat = new THREE.MeshStandardMaterial({ color: PAIR_LINE[i], roughness: .5 });
+    const grp = new THREE.Group();
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, CS, 12), mat);
+    const b1 = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), mat), b2 = b1.clone();
+    b1.position.y = CS / 2; b2.position.y = -CS / 2; grp.add(rod, b1, b2);
+    ROD_ENDS[i].forEach((k, j) => {
+      const bd = makeBadge(PAIR_LINE[i]); bd.position.y = (j ? -1 : 1) * (CS / 2 + 0.42); grp.add(bd);
+      rodBadges.push({ k, bd });
+    });
+    if (i === 1) grp.rotation.x = Math.PI / 2;
+    if (i === 2) grp.rotation.z = Math.PI / 2;
+    grp.visible = false; axes.add(grp); return grp;
+  });
+  // 每个面外侧的数字小牌（第 1 节数"六个面"、看"邻居"时用）
+  const faceBadges = {};
+  for (const k in NORMAL) {
+    const bd = makeBadge(C.orange); bd.position.set(...NORMAL[k].map(v => v * (CS / 2 + 0.55)));
+    bd.visible = false; axes.add(bd); faceBadges[k] = bd;
+  }
+  const refreshBadges = () => {
+    rodBadges.forEach(({ k, bd }) => bd.setLabel(label(k)));
+    for (const k in faceBadges) faceBadges[k].setLabel(label(k));
+  };
+  refreshBadges();
+
+  let fold = 1;
+  // f = 1 折好，f = 0 摊平；"下面"晚一点开始折，动作更自然
+  function setFold(f) {
+    fold = f;
+    const th = f * Math.PI / 2, ph = Math.PI / 2 * clamp((f - 0.35) / 0.65, 0, 1);
+    for (const k of ['F', 'K', 'R', 'L']) { const { h, axis, sign } = hinge[k]; h.rotation[axis] = sign * th; }
+    hD.rotation.x = ph;
+    // 数字在折好时正立；摊平时随之转正，展开图里每个数字都是正的
+    for (const k in face) face[k].tex.rotation = -FACE_ROT[k] * (1 - f);
+    // 上面抬到恰好让最低的面不穿过书页
+    const drop = Math.max(CS * Math.sin(th), CS * Math.sin(th) + CS * Math.sin(th + ph));
+    top.position.y = drop + 0.02 - CS / 2;
+    axes.visible = f > 0.99;
+    g.position.z = ZC + Z_FOLD * f;   // 展开时与书页上的展开图对齐，折好后移到页面中部
+  }
+  setFold(1);
+  return {
+    g, face, lines, faceBadges,
+    setFold, getFold: () => fold,
+    setOpacity(o) { for (const k in face) { face[k].mat.opacity = o; face[k].mat.depthWrite = o > 0.98; } },
+    getOpacity: () => face.U.mat.opacity,
+    setGlow(k, v) { face[k].mat.emissiveIntensity = v; },
+    redrawFace(k) { face[k].draw(); refreshBadges(); },
+    orient(q, ms, ctl) { const q0 = g.quaternion.clone(); return tween(ms, p => g.quaternion.slerpQuaternions(q0, q, p), ease.io, ctl); },
+  };
+}
+
+// 观察图卡片：浮在正方体右侧，画着左页上的同一张图
+function makeViewCard(root, cd) {
+  const c = card(2.5, 2.08, () => {}, 220);
+  c.hinge.rotation.x = -0.3; c.hinge.scale.setScalar(0.001); c.hinge.visible = false;
+  c.hinge.position.set(3.45, 0.5, ZC + Z_FOLD); root.add(c.hinge);
+  return {
+    async show(v, ctl, missing = 0) {
+      c.redraw((ctx, w, h) => {
+        rr(ctx, 3, 3, w - 6, h - 6, 22); ctx.fillStyle = C.card; ctx.fill();
+        const a = h * 0.42; isoCube(ctx, (w - a * 1.45) / 2, h * 0.36, a, views(cd)[v], false, `图${'①②③'[v]}`);
+        if (missing) {   // 这张图里没有要找的数：打叉
+          ctx.strokeStyle = 'rgba(210, 60, 40, 0.85)'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(w * 0.2, h * 0.14); ctx.lineTo(w * 0.8, h * 0.74); ctx.moveTo(w * 0.8, h * 0.14); ctx.lineTo(w * 0.2, h * 0.74); ctx.stroke();
+          rr(ctx, 16, 16, 170, 58, 12); ctx.fillStyle = '#d23c28'; ctx.fill();
+          text(ctx, `没有 ${missing}`, 101, 56, `900 34px ${F_CN}`, '#fff', 'center');
+        }
+      });
+      c.hinge.visible = true;
+      await tween(420, p => c.hinge.scale.setScalar(Math.max(.001, p)), ease.back, ctl);
+    },
+    async hide(ctl) {
+      await tween(220, p => c.hinge.scale.setScalar(Math.max(.001, 1 - p)), ease.io, ctl);
+      c.hinge.visible = false;
+    },
+    reset() { c.hinge.scale.setScalar(.001); c.hinge.visible = false; },
+  };
+}
+
+// "邻居抽屉"：浮在正方体左侧的托盘，4 个槽位；上方一排候选数字球，同框的球一个个塞进去
+function makeDrawer(root) {
+  const g = new THREE.Group(); g.position.set(-3.35, 0.2, ZC + Z_FOLD + 0.2); g.visible = false; root.add(g);
+  const TW = 2.9, TD = 0.9, TH = 0.34, BALL = 0.5;
+  const mat = new THREE.MeshStandardMaterial({ color: '#f3e3c8', roughness: .9 });
+  const part = (w, h, d, x, y, z) => { const m = ink(M(new THREE.BoxGeometry(w, h, d), mat)); m.position.set(x, y, z); g.add(m); };
+  part(TW, 0.06, TD, 0, 0, 0);                                                     // 底板
+  part(TW, TH, 0.05, 0, TH / 2, TD / 2); part(TW, TH, 0.05, 0, TH / 2, -TD / 2);   // 前后挡板
+  part(0.05, TH, TD, -TW / 2, TH / 2, 0); part(0.05, TH, TD, TW / 2, TH / 2, 0);   // 左右挡板
+  const slotX = i => (i - 1.5) * 0.7;
+  const slotMat = new THREE.MeshStandardMaterial({ color: '#d9c7a6', roughness: 1 });
+  for (let i = 0; i < 4; i++) { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.02, 28), slotMat); s.position.set(slotX(i), 0.04, 0); g.add(s); }
+  const label = card(2.2, 0.5, cardText(''));                                     // 名牌立在后挡板上
+  label.hinge.position.set(0, TH, -TD / 2 - 0.03); label.hinge.rotation.x = -0.25; g.add(label.hinge);
+  const balls = {};
+  let filled = [], cands = [];
+  return {
+    g,
+    async open(q, ctl) {
+      label.redraw(cardText(`{o:${q}} 的邻居`, { size: .55 }));
+      for (const n in balls) balls[n].visible = false;
+      filled = []; cands = [1, 2, 3, 4, 5, 6].filter(n => n !== q);
+      cands.forEach((n, i) => {
+        const b = balls[n] || (balls[n] = makeBadge(C.soft));
+        g.add(b); b.setLabel(n); b.setFill(C.soft); b.scale.setScalar(BALL);
+        b.position.set((i - 2) * 0.62, 1.65, 0.1); b.visible = true;   // 候选球排在名牌上方
+      });
+      g.visible = true;
+      await tween(450, p => g.scale.setScalar(Math.max(.001, p)), ease.back, ctl);
+    },
+    has: n => filled.includes(n),
+    // 候选球沿弧线落进下一个空槽，落定后变成橙色
+    async insert(n, ctl) {
+      const b = balls[n], p0 = b.position.clone(), p1 = new THREE.Vector3(slotX(filled.length), 0.32, 0);
+      filled.push(n);
+      await tween(650, p => { b.position.lerpVectors(p0, p1, p); b.position.y += Math.sin(p * Math.PI) * 0.6; }, ease.io, ctl);
+      b.setFill(C.orange);
+    },
+    leftover: () => cands.filter(n => !filled.includes(n)),
+    ball: n => balls[n],
+    async close(ctl) { await tween(300, p => g.scale.setScalar(Math.max(.001, 1 - p)), ease.io, ctl); g.visible = false; },
+    reset() { g.visible = false; g.scale.setScalar(1); },
+  };
+}
+
+// 动画小工具
+const glowTo = (cube, k, v, ms, ctl) => { const v0 = cube.face[k].mat.emissiveIntensity; return tween(ms, p => cube.setGlow(k, lerp(v0, v, p)), ease.io, ctl); };
+const fadeTo = (cube, o, ms, ctl) => { const o0 = cube.getOpacity(); return tween(ms, p => cube.setOpacity(lerp(o0, o, p)), ease.io, ctl); };
+const showLine = (cube, i, ctl) => { const l = cube.lines[i]; l.visible = true; return tween(500, p => l.scale.set(1, Math.max(.001, p), 1), ease.out, ctl); };
+const popBadge = (bd, ctl) => { bd.visible = true; return tween(320, p => bd.scale.setScalar(0.62 * Math.max(.001, p)), ease.back, ctl); };
+function clearGlow(cube) { for (const k in cube.face) cube.setGlow(k, 0); }
+function hideFaceBadges(cube) { for (const k in cube.faceBadges) cube.faceBadges[k].visible = false; }
+function tintPair(cube, cd, i) { for (const k in PAIR) if (PAIR[k] === i) { cd.tint[k] = PAIR_TINT[i]; cube.redrawFace(k); } }
+function reveal(cube, cd, k) { cd.hidden.delete(k); cube.redrawFace(k); }
+// 摊平成展开图（同时把正方体转正、恢复不透明）
+function unfoldTo(cube, ms, ctl) {
+  const q0 = cube.g.quaternion.clone(), f0 = cube.getFold(), o0 = cube.getOpacity();
+  cube.lines.forEach(l => l.visible = false); hideFaceBadges(cube);
+  S.unfold = true; S.xray = false; ui();
+  return tween(ms, p => { cube.setFold(lerp(f0, 0, p)); cube.g.quaternion.slerpQuaternions(q0, Q_FLAT, p); cube.setOpacity(lerp(o0, 1, p)); }, ease.io, ctl);
+}
+// 一个面和它的四个邻居一起亮起并保持（"四亮一暗"），对面留空
+async function showNeighbors(cube, k, ctl) {
+  await glowTo(cube, k, 0.7, 350, ctl);
+  for (const n in cube.face) if (n !== k && n !== OPP[k]) await glowTo(cube, n, 0.38, 220, ctl);
+}
+function setStep(i, k) { S.step[i] = k; redraw(i, 'L'); narrate(i, k); }
+
+// 推出 q 的对面：正方体上标出各面数字；三张图逐张看，和 q 同框的数塞进"q 的邻居"抽屉；
+// 抽屉装满 4 个后，剩下的那个球飞到 q 的对面，"?" 揭开
+async function findOpposite(sc, cd, q, ctl, page) {
+  const { cube, vcard, drawer } = sc, k = cd.key[q], o = OPP[k];
+  for (const n in cube.faceBadges) { cube.faceBadges[n].setFill(n === k ? C.orange : C.soft); popBadge(cube.faceBadges[n], ctl).catch(() => {}); }
+  await glowTo(cube, k, 0.7, 350, ctl);
+  await drawer.open(q, ctl);
+  for (let v = 0; v < 3; v++) {
+    S.pic[page] = v + 1; redraw(page, 'L');
+    const vs = views(cd)[v], has = vs.includes(q);
+    await vcard.show(v, ctl, has ? 0 : q);
+    if (has) for (const n of vs) if (n !== q && !drawer.has(n)) {
+      await drawer.insert(n, ctl);
+      const nk = cd.key[n]; if (!cd.hidden.has(nk)) glowTo(cube, nk, 0.38, 250, ctl).catch(() => {});   // 位置已知的邻居在正方体上也亮起
+    }
+    await wait(has ? 500 : 1100, ctl);
+    await vcard.hide(ctl);
+  }
+  S.pic[page] = 0; redraw(page, 'L');
+  // 抽屉外剩下的球：先闪两下，再飞到 q 的对面
+  const n0 = drawer.leftover()[0], ball = drawer.ball(n0);
+  ball.setFill(PAIR_LINE[PAIR[k]]);
+  await tween(700, p => ball.scale.setScalar(0.5 * (1 + 0.35 * Math.abs(Math.sin(p * Math.PI * 2)))), ease.lin, ctl);
+  await fadeTo(cube, 0.38, 300, ctl);
+  drawer.g.updateMatrixWorld(true); cube.g.updateMatrixWorld(true);
+  const target = drawer.g.worldToLocal(cube.g.localToWorld(new THREE.Vector3(...NORMAL[o]).multiplyScalar(CS / 2 + 0.45)));
+  const p0 = ball.position.clone();
+  await tween(950, p => { ball.position.lerpVectors(p0, target, p); ball.position.y += Math.sin(p * Math.PI) * 1.0; }, ease.io, ctl);
+  ball.visible = false; hideFaceBadges(cube);
+  reveal(cube, cd, o); await glowTo(cube, o, 0.7, 300, ctl);
+  await showLine(cube, PAIR[k], ctl); tintPair(cube, cd, PAIR[k]);
+  return o;
+}
+
+function makeCubeScene(i, cd, play) {
+  const root = contentRoot();
+  const cube = makeCube(root, cd);
+  const msg = floatCard(3.6, 0.62); msg.hinge.position.set(0, CS + 0.55, ZC + Z_FOLD - 0.3); root.add(msg.hinge);
+  const vcard = makeViewCard(root, cd), drawer = makeDrawer(root);
+  const sc = {
+    root, cube, msg, vcard, drawer,
+    // 立体化：展开图从书页上折起成正方体
+    pop(P) {
+      const f = ease.io(clamp((P - 0.1) / 0.9, 0, 1));
+      cube.setFold(f); cube.g.quaternion.slerpQuaternions(Q_FLAT, qDisp, f);
+    },
+    // 清空讲解留下的痕迹（高亮、连线、小牌、颜色、揭开的数字）
+    reset() {
+      cube.setOpacity(1); clearGlow(cube); hideFaceBadges(cube);
+      cube.lines.forEach(l => { l.visible = false; l.scale.set(1, 1, 1); });
+      msg.reset(); vcard.reset(); drawer.reset();
+      for (const k in cube.faceBadges) cube.faceBadges[k].setFill(C.orange);
+      cd.hidden = new Set(cd.init); cd.tint = {};
+      for (const k in cube.face) cube.redrawFace(k);
+      S.xray = false; S.pic[i] = 0;
+      if (i === 2) S.solved = false;
+      if (i === 3) { S.res = {}; S.checked = false; }
+    },
+    // 回到折好、正面朝前的样子
+    async relax(ctl, ms = 700) {
+      const f0 = cube.getFold(), q0 = cube.g.quaternion.clone(), o0 = cube.getOpacity();
+      S.unfold = false; ui();
+      await tween(ms, p => { cube.setFold(lerp(f0, 1, p)); cube.g.quaternion.slerpQuaternions(q0, qDisp, p); cube.setOpacity(lerp(o0, 1, p)); }, ease.io, ctl);
+    },
+    play: ctl => play(sc, ctl),
+  };
+  return sc;
+}
+
+/* ---- 第 1 节：认识正方体 ---- */
+async function playIntro(sc, ctl) {
+  const { cube, msg } = sc, cd = CUBES[1];
+  await sc.relax(ctl);
+  setStep(1, 1);
+  const qy = new THREE.Quaternion();
+  await tween(2600, p => { qy.setFromAxisAngle(Y_AXIS, p * Math.PI * 2); cube.g.quaternion.copy(qy).multiply(qDisp); }, ease.io, ctl);
+  // 六个面依次点亮，旁边弹出它的数字（背面、底面也看得到）
+  for (let n = 1; n <= 6; n++) {
+    const k = cd.key[n];
+    glowTo(cube, k, 0.6, 250, ctl).catch(() => {});
+    await popBadge(cube.faceBadges[k], ctl);
+    await wait(420, ctl);
+    cube.setGlow(k, 0);
+  }
+  await wait(800, ctl); await speakWait(ctl);
+  hideFaceBadges(cube);
+
+  setStep(1, 2);
+  await showNeighbors(cube, 'U', ctl);
+  for (const k of ['U', 'F', 'R', 'K', 'L']) await popBadge(cube.faceBadges[k], ctl);
+  await wait(1200, ctl);
+  hideFaceBadges(cube);
+  await fadeTo(cube, 0.35, 500, ctl);
+  await glowTo(cube, 'D', 0.7, 400, ctl);
+  await showLine(cube, 0, ctl);
+  msg.show('1 的对面是 {o:4}', { size: .5 }, ctl).catch(() => {});
+  await wait(800, ctl); await speakWait(ctl);
+  clearGlow(cube); await msg.hide(ctl);
+
+  setStep(1, 3);
+  await fadeTo(cube, 0.3, 400, ctl);
+  for (let p = 0; p < 3; p++) { if (!cube.lines[p].visible) await showLine(cube, p, ctl); tintPair(cube, cd, p); await wait(500, ctl); }
+  await wait(600, ctl); await speakWait(ctl);
+
+  setStep(1, 4);
+  await unfoldTo(cube, 1800, ctl);
+  await wait(600, ctl); await speakWait(ctl);
+  setStep(1, 0);
+}
+
+/* ---- 第 2 节：从三个方向推出对面 ---- */
+async function playPuzzle(sc, ctl) {
+  const { cube, msg, vcard } = sc, cd = CUBES[2];
+  await sc.relax(ctl);
+  // 第 1 步只看图、记邻居：正方体不转，"?" 也不提前揭开
+  setStep(2, 1);
+  for (let v = 0; v < 3; v++) {
+    S.pic[2] = v + 1; redraw(2, 'L');
+    await vcard.show(v, ctl);
+    for (const k in cube.face) if (!cd.hidden.has(k) && views(cd)[v].includes(cd.nums[k])) cube.setGlow(k, 0.4);
+    subLine(v + 1);
+    await wait(1700, ctl);
+    clearGlow(cube); await vcard.hide(ctl);
+  }
+  S.pic[2] = 0; redraw(2, 'L');
+  await speakWait(ctl);
+
+  for (const [q, s] of [[1, 2], [2, 3]]) {
+    setStep(2, s);
+    const o = await findOpposite(sc, cd, q, ctl, 2);
+    msg.show(`${q} ↔ {o:${cd.nums[o]}}`, { size: .55 }, ctl).catch(() => {});
+    await wait(1000, ctl); await speakWait(ctl);
+    clearGlow(cube); await msg.hide(ctl); await sc.drawer.close(ctl);
+  }
+  // 第 4 步：只剩 3 和一个数没配对，它们互为对面
+  setStep(2, 4);
+  const k3 = cd.key[3], o3 = OPP[k3];
+  await fadeTo(cube, 0.38, 300, ctl);
+  await glowTo(cube, k3, 0.7, 350, ctl);
+  reveal(cube, cd, o3); await glowTo(cube, o3, 0.7, 350, ctl);
+  await showLine(cube, PAIR[k3], ctl); tintPair(cube, cd, PAIR[k3]);
+  msg.show(`3 ↔ {o:${cd.nums[o3]}}`, { size: .55 }, ctl).catch(() => {});
+  await wait(1200, ctl);
+  clearGlow(cube); await msg.hide(ctl);
+  S.solved = true; redraw(2, 'L');
+  // 答案揭晓后再验证：把正方体转成三张图的样子逐一对照
+  cube.lines.forEach(l => l.visible = false);
+  await fadeTo(cube, 1, 400, ctl);
+  for (let v = 0; v < 3; v++) {
+    S.pic[2] = v + 1; redraw(2, 'L');
+    vcard.show(v, ctl).catch(() => {});
+    await cube.orient(VIEW_Q[v], 900, ctl);
+    await wait(1300, ctl);
+    await vcard.hide(ctl);
+  }
+  S.pic[2] = 0; redraw(2, 'L');
+  await unfoldTo(cube, 1800, ctl);
+  await wait(500, ctl); await speakWait(ctl);
+  setStep(2, 0);
+}
+
+/* ---- 第 3 节：验证学生的答案 ---- */
+async function playCheck(sc, ctl) {
+  const { cube, msg } = sc, cd = CUBES[3];
+  await sc.relax(ctl);
+  for (let q = 1; q <= 3; q++) {
+    setStep(3, q);
+    const opp = oppOf(cd, q), ok = S.guess[q] === opp;
+    await findOpposite(sc, cd, q, ctl, 3);
+    S.res[q] = ok; redraw(3, 'L');
+    msg.show(`${q} 的对面是 {o:${opp}}` + (ok ? '　{t:✓ 答对了}' : ''), { size: .5 }, ctl).catch(() => {});
+    await wait(1000, ctl); await speakWait(ctl);
+    clearGlow(cube); await msg.hide(ctl); await sc.drawer.close(ctl);
+  }
+  S.checked = true;
+  setStep(3, 4);
+  await unfoldTo(cube, 1800, ctl);
+  await wait(500, ctl); await speakWait(ctl);
+  setStep(3, 0);
+}
+
+/* ================================================================
+   组装：各页立体场景
+   ================================================================ */
+let SCENES = [];
+// 抽屉推理的讲解：逐张图说放进了哪些数
+function drawerSay(cd, q) {
+  const seen = [];
+  const parts = views(cd).map((v, i) => {
+    const pic = `图${'①②③'[i]}`;
+    if (!v.includes(q)) return `${pic}里没有 ${q}`;
+    const add = v.filter(n => n !== q && !seen.includes(n)); seen.push(...add);
+    return `${pic}放进 ${add.join('、')}`;
+  });
+  return `把和 ${q} 同框的数放进“${q} 的邻居”抽屉：${parts.join('，')}。抽屉装满了，剩下的 ${oppOf(cd, q)} 就是 ${q} 的对面。`;
+}
+/* ---- 讲解：字幕（印在右页）+ 语音 ---- */
+function puzzleNarr() {
+  const cd = CUBES[2], nb = q => neighbors(cd, q).join('、');
+  return [
+    { t: '找邻居', b: '同一张图里同时看到的三个面，两两都相邻。先只看图，把三张图里的邻居都记下来。',
+      f: views(cd).map((v, i) => `图${'①②③'[i]}：${v.join('、')} 两两相邻`) },
+    { t: '1 的对面', b: drawerSay(cd, 1),
+      f: `1 ↔ {o:${oppOf(cd, 1)}}` },
+    { t: '2 的对面', b: drawerSay(cd, 2),
+      f: `2 ↔ {o:${oppOf(cd, 2)}}` },
+    { t: '配对', b: `还剩下 3 和 ${oppOf(cd, 3)}，它们互为对面。再把正方体转成三张图的样子对照一下（只看位置，不管数字朝向），最后展开。`,
+      f: [1, 2, 3].map(q => `${q} ↔ {o:${oppOf(cd, q)}}`).join('　') },
+  ];
+}
+function checkNarr() {
+  const cd = CUBES[3];
+  const steps = [1, 2, 3].map(q => {
+    const opp = oppOf(cd, q), g = S.guess[q];
+    const verdict = !g ? '你还没有填这一题。' : g === opp ? '你答对了！' : `你填的是 ${g}，可 ${g} 和 ${q} 在图里一起出现过，是邻居，不可能是对面。`;
+    return { t: `${q} 的对面`, b: drawerSay(cd, q) + verdict,
+      f: `${q} ↔ {o:${opp}}` + (!g ? '' : g === opp ? '　{t:✓}' : `　{g:你填的 ${g}} ✗`) };
+  });
+  const score = [1, 2, 3].filter(q => S.guess[q] === oppOf(cd, q)).length;
+  steps.push({ t: '展开看看', b: `三题答对 ${score} 题。把正方体展开：三组对面颜色相同，都隔着一个面。`,
+    f: [1, 2, 3].map(q => `${q} ↔ ${oppOf(cd, q)}`).join('　') });
+  return steps;
+}
+const NARR = {
+  1: () => [
+    { t: '六个面', b: '正方体有 6 个面，每个面都是同样大的正方形。我们在每个面上写一个数：1 到 6，各不相同。',
+      f: '6 个面　12 条棱　8 个顶点' },
+    { t: '相对与相邻', b: '有公共棱的两个面相邻。看上面的 1：前、后、左、右四个面都和它相邻，只有下面不挨着它，叫做它的对面。',
+      f: '1 的对面是 {o:4}' },
+    { t: '透视', b: '把正方体变成透明的，藏在后面的面也能看见。三根彩色的线，各连着一组相对的面。',
+      f: '1 ↔ 4　2 ↔ 6　3 ↔ 5' },
+    { t: '展开', b: '沿着棱把正方体剪开、铺平，就得到展开图。同色的两个面是一组对面：它们不挨着，中间隔着一个面。',
+      f: '展开图中：隔一个面 → 相对' },
+  ],
+  2: puzzleNarr,
+  3: checkNarr,
+};
+function narrate(i, k) {
+  if (!k || !NARR[i]) return;
+  const s = NARR[i]()[k - 1];
+  S.sub = { i, k, n: Array.isArray(s.f) ? 1 : 99 }; redraw(i, 'R');
+  const f = [].concat(s.f).map(x => spoken(x.replace(/　\{[tg]:.*$/, ''))).join('，');
+  speak(`第${'一二三四'[k - 1]}步，${s.t}。${spoken(s.b)}${f}。${s.tail || ''}`);
+}
+// 多行公式逐行出现
+function subLine(n) { if (S.sub) { S.sub.n = n; redraw(S.sub.i, 'R'); } }
+function hideNarr() {
+  stopSpeech();
+  if (S.sub) { const i = S.sub.i; S.sub = null; redraw(i, 'R'); }
+}
+
+/* ---- 语音朗读（Web Speech API） ---- */
+const TTS = window.speechSynthesis || null;
+let voiceOn = true, speaking = false, speakTimer = 0, zhVoice = null, curUtter = null;
+try { voiceOn = localStorage.getItem('popbook-voice') !== 'off'; } catch (e) {}
+function pickVoice() {
+  if (!TTS) return;
+  const vs = TTS.getVoices().filter(v => /^zh(-|_)?(CN|Hans)?/i.test(v.lang) && !/HK|TW/i.test(v.lang));
+  zhVoice = vs.find(v => /Xiaoxiao|Yunxi|Natural|Online/i.test(v.name)) || vs.find(v => /Google/i.test(v.name)) || vs[0] || null;
+}
+if (TTS) { pickVoice(); TTS.addEventListener?.('voiceschanged', pickVoice); }
+// 把公式写法转成适合朗读的中文
+function spoken(f) {
+  return f.replace(/[{][a-z]:|[}]/g, '').replace(/[✓✗]/g, '')
+    .replace(/↔/g, ' 的对面是 ').replace(/→/g, '，就是').replace(/　+/g, '，')
+    .replace(/⟦([^¦]+)¦([^⟧]+)⟧/g, (_, n, dn) => {
+      const plus = n.includes('+'), minus = /\s−\s/.test(n);
+      if (plus && minus) return ` ${n}，整体除以 ${dn} `;
+      if (plus || minus) return ` ${n} 的${plus ? '和' : '差'}除以 ${dn} `;
+      return ` ${dn}分之${n} `;
+    })
+    .replace(/\|([^|]+)\|/g, ' $1的绝对值 ')
+    .replace(/ − /g, ' 减 ').replace(/−/g, '负')
+    .replace(/\+/g, ' 加 ').replace(/=/g, ' 等于 ').replace(/÷/g, ' 除以 ').replace(/</g, ' 小于 ')
+    .replace(/[()]/g, '').replace(/\s+/g, ' ').trim();
+}
+function speak(text) {
+  const busy = TTS && (TTS.speaking || TTS.pending);
+  stopSpeech();
+  if (!TTS || !voiceOn) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.rate = 1.0; u.pitch = 1.05;
+  if (zhVoice) u.voice = zhVoice;
+  // cancel() 会异步触发上一句的 onerror，只认当前这句的结束
+  curUtter = u;
+  u.onend = u.onerror = () => { if (curUtter === u) { speaking = false; clearTimeout(speakTimer); } };
+  speaking = true;
+  // 兜底：个别浏览器不触发 onend 时，按字数估算时长后放行
+  speakTimer = setTimeout(() => { speaking = false; }, 2500 + text.length * 260);
+  // Chrome：cancel() 后立刻 speak() 可能被吞掉，稍等再说；resume() 防止引擎卡在暂停态
+  const go = () => { if (curUtter === u) { TTS.resume?.(); TTS.speak(u); } };
+  if (busy) setTimeout(go, 120); else go();
+}
+function stopSpeech() {
+  speaking = false; curUtter = null; clearTimeout(speakTimer);
+  if (TTS && (TTS.speaking || TTS.pending)) TTS.cancel();
+}
+function speakWait(ctl) {
+  return new Promise((res, rej) => {
+    const chk = () => ctl.cancelled ? rej(CANCEL) : !speaking ? res() : requestAnimationFrame(chk);
+    chk();
+  });
+}
+function setVoice(on) {
+  voiceOn = on;
+  try { localStorage.setItem('popbook-voice', on ? 'on' : 'off'); } catch (e) {}
+  if (!on) stopSpeech();
+  $('bVoice').classList.toggle('muted', !on);
+  $('bVoice').title = on ? '语音讲解：开（点击静音）' : '语音讲解：关（点击开启）';
+}
+function buildScenes() {
+  SCENES = [
+    null,
+    makeCubeScene(1, CUBES[1], playIntro),
+    makeCubeScene(2, CUBES[2], playPuzzle),
+    makeCubeScene(3, CUBES[3], playCheck),
+  ];
+}
+
+/* ================================================================
+   交互：打开、翻页、立体化、播放
+   ================================================================ */
+let playCtl = null;
+function cancelPlay() {
+  if (playCtl) playCtl.cancelled = true;
+  hideNarr();
+  playCtl = null; S.playing = false;
+  const sc = SCENES[S.spread];
+  if (sc) sc.reset();
+  if (sc) { S.step[S.spread] = 0; redraw(S.spread, 'L'); redraw(S.spread, 'R'); }
+  ui();
+}
+async function setBuilt(on, fast = false) {
+  const i = S.spread, sc = SCENES[i];
+  if (!sc || S.built[i] === on || S.busy) return;
+  S.busy = true;
+  if (!on) { cancelPlay(); await sc.relax(null, 500); }   // 先折回正方体，再收进书页
+  S.built[i] = on; redraw(i, 'R'); ui();
+  sc.pop(on ? 0 : 1); sc.root.visible = true;
+  S.view = on ? 'anim' : 'read';
+  await Promise.all([
+    tween(fast ? 700 : 2000, p => { const q = on ? p : 1 - p; sc.pop(q); setLift(sc.root, ease.io(q)); }, ease.lin),
+    flyTo(on ? animView() : openView(), fast ? 600 : 1300),
+  ]);
+  if (!on) sc.root.visible = false;
+  S.busy = false; ui();
+}
+async function play() {
+  const sc = SCENES[S.spread];
+  if (!sc || S.busy) return;
+  if (!S.built[S.spread]) await setBuilt(true);
+  cancelPlay();
+  const ctl = playCtl = { cancelled: false };
+  S.playing = true; ui();
+  try { await sc.play(ctl); }
+  catch (e) { if (e !== CANCEL) console.error(e); }
+  if (playCtl === ctl) { playCtl = null; S.playing = false; ui(); }
+}
+async function flip(dir, fast = false) {
+  const cur = S.spread, next = cur + dir;
+  if (S.busy || !S.opened || next < 0 || next >= SPREADS.length) return;
+  if (S.built[cur]) await setBuilt(false, true);
+  cancelPlay();
+  const lift = peekLast === dir ? peekCur : 0;
+  peek = peekLast = 0; peekCur = 0;
+  S.busy = true; closeMenu(); ui();
+  const P = PAGE_CANVAS;
+  if (dir > 0) { useImage(texFF, P[cur].R); useImage(texFB, P[next].L); useImage(texR, P[next].R); }
+  else { useImage(texFF, P[next].R); useImage(texFB, P[cur].L); useImage(texL, P[next].L); }
+  flipGroup.visible = true;
+  await tween(fast ? 520 : 950, p => {
+    const th = dir > 0 ? p * Math.PI : (1 - p) * Math.PI;
+    const c0 = PEEK_CURL * lift * (1 - p);
+    setFlip(th, (dir > 0 ? -1 : 1) * 0.9 * Math.sin(p * Math.PI) + (dir > 0 ? c0 : -c0));
+  }, ease.io);
+  if (dir > 0) useImage(texL, P[next].L); else useImage(texR, P[next].R);
+  flipGroup.visible = false;
+  S.spread = next; S.busy = false; ui();
+}
+async function goTo(target) {
+  closeMenu();
+  while (S.spread !== target && !S.busy) await flip(Math.sign(target - S.spread), Math.abs(target - S.spread) > 1);
+}
+
+// ---- 相机
+const controls = new OrbitControls(camera, renderer.domElement);
+function openView() {
+  const elev = 0.8, a = innerWidth / innerHeight, f = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const d = Math.max(8.2 / f, 10.9 / (f * a));
+  const target = new THREE.Vector3(0, T, 0.9);
+  return { target, pos: target.clone().add(new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)).multiplyScalar(d)) };
+}
+// 动画视角：仍框住整个跨页（左页同步文字可见），仰角略低，看清升起的模型
+function animView() {
+  const elev = 0.68, a = innerWidth / innerHeight, f = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const d = Math.max(7.6 / f, 10.4 / (f * a));
+  const target = new THREE.Vector3(0, T + 1.0, 1.5);
+  return { target, pos: target.clone().add(new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)).multiplyScalar(d)) };
+}
+function closedView() {
+  const { pos, target } = openView();
+  const d = pos.distanceTo(target) * 0.78, t = new THREE.Vector3(0, 0.6, 0);
+  return { target: t, pos: t.clone().add(new THREE.Vector3(Math.sin(0.35) * Math.cos(1.0), Math.sin(1.0), Math.cos(0.35) * Math.cos(1.0)).multiplyScalar(d)) };
+}
+async function flyTo(view, ms = 1000, extra) {
+  const p0 = camera.position.clone(), t0 = controls.target.clone();
+  await tween(ms, p => { camera.position.lerpVectors(p0, view.pos, p); controls.target.lerpVectors(t0, view.target, p); extra && extra(p); }, ease.io);
+}
+async function openBook() {
+  if (S.opened || S.busy) return;
+  S.busy = true; hint(''); controls.enabled = false;
+  await flyTo(openView(), 1900, p => setOpen(p));
+  controls.enabled = true; S.opened = true; S.busy = false;
+  document.getElementById('tb').classList.remove('off');
+  ui();
+}
+
+/* ---- 指针：点击 ---- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(e, objs) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(objs, true).find(h => h.object.isMesh);
+}
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; }, { capture: true });
+renderer.domElement.addEventListener('pointermove', e => {
+  let cur = '', z = null;
+  if (!S.opened) cur = pick(e, [book]) ? 'pointer' : '';
+  else if (!S.busy) { z = zoneAt(e); if (z) cur = 'pointer'; }
+  setPeek(z === 'next' ? 1 : z === 'prev' ? -1 : 0);
+  renderer.domElement.style.cursor = cur;
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+  if (!S.opened) { if (pick(e, [book])) openBook(); return; }
+  if (S.busy) return;
+  const z = zoneAt(e);
+  if (z === 'build') setBuilt(true);
+  else if (z === 'next') flip(1);
+  else if (z === 'prev') flip(-1);
+});
+renderer.domElement.addEventListener('pointerleave', () => setPeek(0));
+
+// 页面点击区域：插图区 → 立体化；左页外侧 → 上一页；右页插图以外 → 下一页
+function zoneAt(e) {
+  if (!S.opened || S.busy) return null;
+  const sc = SCENES[S.spread];
+  const objs = [leftPage, rightPage]; if (sc && sc.root.visible) objs.push(sc.root);
+  const h = pick(e, objs);
+  if (!h || !h.uv) return null;
+  const x = (h.uv.x - 0.5) * W, z = (0.5 - h.uv.y) * H;
+  if (h.object === leftPage) return S.spread > 0 && x < 0.5 ? 'prev' : null;
+  if (h.object !== rightPage) return null;
+  const inFig = sc && Math.abs(x) < CS * 1.6 && z > ZC - CS * 1.6 && z < ZC + CS * 2.6;   // 展开图所在区域
+  if (inFig) return S.built[S.spread] ? null : 'build';
+  return S.spread < SPREADS.length - 1 && x > -0.5 ? 'next' : null;
+}
+
+// 悬停翻页区时，页角轻轻掀起
+const PEEK_CURL = 0.32;
+let peek = 0, peekLast = 0, peekCur = 0;
+function restorePages() { useImage(texL, PAGE_CANVAS[S.spread].L); useImage(texR, PAGE_CANVAS[S.spread].R); }
+function setPeek(d) {
+  if (S.busy || (d > 0 && S.built[S.spread])) d = 0;
+  if (d === peek) return;
+  peek = d;
+  if (!d) return;
+  if (peekLast && peekLast !== d) restorePages();
+  peekLast = d;
+  const P = PAGE_CANVAS, i = S.spread;
+  if (d > 0) { useImage(texFF, P[i].R); useImage(texFB, P[i + 1].L); useImage(texR, P[i + 1].R); }
+  else { useImage(texFF, P[i - 1].R); useImage(texFB, P[i].L); useImage(texL, P[i - 1].L); }
+}
+function updatePeek() {
+  if (S.busy || !peekLast) return;
+  peekCur += ((peek ? 1 : 0) - peekCur) * 0.16;
+  if (!peek && peekCur < 0.004) { peekCur = 0; peekLast = 0; flipGroup.visible = false; restorePages(); return; }
+  flipGroup.visible = true;
+  if (peekLast > 0) setFlip(0, PEEK_CURL * peekCur);
+  else setFlip(Math.PI, -PEEK_CURL * peekCur);
+}
+
+// 第 3 节：在 未填(0) 和 1～6（不含自己）之间切换
+function setGuess(q, d) {
+  const opts = [0, 1, 2, 3, 4, 5, 6].filter(n => n !== q);
+  S.guess[q] = opts[(opts.indexOf(S.guess[q]) + d + opts.length) % opts.length];
+  if (playCtl) cancelPlay();
+  if (SCENES[3]) SCENES[3].reset();
+  redraw(3, 'L'); redraw(3, 'R'); ui();
+}
+// 透视：面变半透明，三组对面用彩线连起来
+async function setXray(on) {
+  const sc = SCENES[S.spread];
+  if (!sc || !S.built[S.spread] || S.busy) return;
+  if (S.playing) cancelPlay();
+  S.busy = true;
+  if (on && S.unfold) await sc.relax(null, 900);
+  S.xray = on; ui();
+  sc.cube.lines.forEach(l => { l.visible = on; l.scale.set(1, 1, 1); });
+  await fadeTo(sc.cube, on ? 0.32 : 1, 450);
+  S.busy = false; ui();
+}
+// 展开：摊平成展开图；再点一次折回正方体
+async function setUnfold(on) {
+  const sc = SCENES[S.spread];
+  if (!sc || !S.built[S.spread] || S.busy) return;
+  if (S.playing) cancelPlay();
+  S.busy = true;
+  if (on) await unfoldTo(sc.cube, 1500); else await sc.relax(null, 1300);
+  S.busy = false; ui();
+}
+
+/* ================================================================
+   UI
+   ================================================================ */
+const $ = id => document.getElementById(id);
+let hintTimer = 0;
+function hint(s) { const h = $('hint'); if (s) { h.textContent = s; h.classList.remove('off'); } else h.classList.add('off'); }
+function ui() {
+  const i = S.spread, sc = SCENES[i];
+  $('pageLabel').innerHTML = `<b>${SPREADS[i].pn}</b>${SPREADS[i].title}`;
+  $('bPrev').disabled = S.busy || i === 0;
+  $('bNext').disabled = S.busy || i === SPREADS.length - 1;
+  $('bBuild').disabled = !sc || S.busy;
+  $('bBuild').classList.toggle('on', !!S.built[i]);
+  $('bBuild').querySelector('.txt').textContent = S.built[i] ? '平面' : '立体';
+  $('bPlay').disabled = !sc || S.busy;
+  $('bPlay').querySelector('.txt').textContent = S.playing ? '重播' : '播放';
+  const live = !!sc && S.built[i];
+  $('bXray').classList.toggle('hide', !live); $('bUnfold').classList.toggle('hide', !live);
+  $('bXray').disabled = $('bUnfold').disabled = S.busy;
+  $('bXray').classList.toggle('on', S.xray); $('bUnfold').classList.toggle('on', S.unfold);
+  $('bUnfold').querySelector('.txt').textContent = S.unfold ? '折起' : '展开';
+  $('ab').classList.toggle('hide', i !== 3);
+  for (const q of [1, 2, 3]) $('g' + q).textContent = S.guess[q] || '?';
+  document.querySelectorAll('.menu button').forEach((b, k) => b.classList.toggle('cur', k === i));
+  if (!S.opened) return;
+  clearTimeout(hintTimer);
+  let h = '';
+  if (S.playing) { hint(''); return; }
+  if (sc && !S.built[i] && !S.busy) h = '点击右页的展开图，把它折成正方体';
+  else if (i === 3 && S.built[3] && !S.busy) h = '先在工具栏里填出 1、2、3 的对面，再点 ▶ 验证';
+  else if (sc && S.built[i] && !S.playing && !S.busy) h = '拖动旋转 · 「透视」「展开」看清每个面 · 点 ▶ 听讲解';
+  else if (i === 0 && !S.busy) h = '点击右页翻到下一页，点击左页回到上一页';
+  hint(h);
+  if (h) hintTimer = setTimeout(() => hint(''), 4200);
+}
+function closeMenu() { $('menu').classList.add('off'); }
+$('menu').innerHTML = SPREADS.map((s, k) => `<button data-i="${k}">${s.title}<i>${s.pn}</i></button>`).join('');
+$('menu').addEventListener('click', e => { const b = e.target.closest('button'); if (b) goTo(+b.dataset.i); });
+$('bMenu').onclick = () => $('menu').classList.toggle('off');
+$('bPrev').onclick = () => flip(-1);
+$('bNext').onclick = () => flip(1);
+$('bBuild').onclick = () => setBuilt(!S.built[S.spread]);
+$('bPlay').onclick = () => play();
+$('bVoice').onclick = () => setVoice(!voiceOn);
+$('bView').onclick = () => {
+  if (S.busy) return;
+  S.view = S.built[S.spread] && S.view !== 'anim' ? 'anim' : 'read';
+  flyTo(S.view === 'anim' ? animView() : openView(), 900);
+};
+document.querySelectorAll('.ab button').forEach(b => b.onclick = () => setGuess(+b.dataset.q, +b.dataset.d));
+$('bXray').onclick = () => setXray(!S.xray);
+$('bUnfold').onclick = () => setUnfold(!S.unfold);
+addEventListener('keydown', e => {
+  if (!S.opened) { if (e.key === 'Enter' || e.key === ' ') openBook(); return; }
+  if (e.key === 'ArrowRight') flip(1);
+  else if (e.key === 'ArrowLeft') flip(-1);
+  else if (e.key === ' ') { e.preventDefault(); play(); }
+  else if (e.key === 'Enter') setBuilt(!S.built[S.spread]);
+  else if (e.key === 'x' || e.key === 'X') setXray(!S.xray);
+  else if (e.key === 'u' || e.key === 'U') setUnfold(!S.unfold);
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ================================================================
+   启动：等字体 → 绘制 → 渲染循环
+   ================================================================ */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function loadFonts() {
+  const link = $('gfont');
+  await Promise.race([new Promise(r => link.sheet ? r() : link.addEventListener('load', r, { once: true })), sleep(3000)]);
+  redrawAll();   // 第一次绘制：收集用到的字符
+  const sample = [...USED].join('') + '0123456789？↔✓✗①②③透视展开折起';
+  const loads = ['400', '700', '900'].map(w => document.fonts.load(`${w} 32px "Noto Serif SC"`, sample))
+    .concat(document.fonts.load(`32px "Ma Shan Zheng"`, sample));
+  await Promise.race([Promise.allSettled(loads), sleep(6000)]);
+}
+
+function frame(now) {
+  runTweens(now);
+  updatePeek();
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+(async () => {
+  Object.assign(controls, {
+    enableDamping: true, dampingFactor: .08, enablePan: false,
+    minDistance: 8, maxDistance: 46, minPolarAngle: 0.12, maxPolarAngle: 1.3,
+    minAzimuthAngle: -1.3, maxAzimuthAngle: 1.3,
+  });
+  const v = closedView(); camera.position.copy(v.pos); controls.target.copy(v.target);
+  buildScenes();
+  await loadFonts();
+  redrawAll();
+  useImage(texL, PAGE_CANVAS[0].L); useImage(texR, PAGE_CANVAS[0].R);
+  requestAnimationFrame(frame);
+  $('loading').classList.add('off');
+  ui();
+  hint('点击书本，打开它');
+  setVoice(voiceOn);
+  document.fonts.addEventListener('loadingdone', () => redrawAll());
+})();
+</script>
+</body>
+</html>

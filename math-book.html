@@ -1,0 +1,1566 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数学立体书</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="gfont" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2a2521;
+    --ink-soft: #6b6158;
+    --paper: #f7f2e7;
+    --orange: #e8641e;
+    --bar: rgba(255, 252, 246, 0.86);
+    --bar-line: rgba(42, 37, 33, 0.10);
+    --shadow: 0 12px 32px rgba(60, 45, 30, 0.20), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #d9ccb6; color: var(--ink);
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; -webkit-font-smoothing: antialiased; }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; touch-action: none; outline: none; }
+
+  .brand { position: fixed; left: 16px; top: 14px; padding: 6px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); font-size: 13px;
+    letter-spacing: .08em; color: var(--ink-soft); user-select: none; }
+
+  .hint { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); padding: 9px 16px;
+    border-radius: 999px; background: rgba(42, 37, 33, 0.84); color: #fff7ec; font-size: 14px;
+    letter-spacing: .04em; pointer-events: none; white-space: nowrap; transition: opacity .4s, transform .4s; }
+  .hint.off { opacity: 0; transform: translate(-50%, 8px); }
+
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #d9ccb6;
+    font-size: 15px; letter-spacing: .2em; color: var(--ink-soft); transition: opacity .6s; z-index: 10; }
+  #loading.off { opacity: 0; pointer-events: none; }
+
+  .tb { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; align-items: center;
+    gap: 2px; padding: 6px; border-radius: 16px; background: var(--bar); backdrop-filter: blur(14px);
+    box-shadow: var(--shadow); transition: opacity .5s, transform .5s; max-width: calc(100vw - 32px);
+    overflow-x: auto; scrollbar-width: none; user-select: none; }
+  .tb.off { opacity: 0; transform: translate(-50%, 24px); pointer-events: none; }
+  .tb button { height: 36px; min-width: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent;
+    color: var(--ink); font: inherit; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+  .tb button:hover { background: rgba(42, 37, 33, 0.07); }
+  .tb button:disabled { opacity: .35; cursor: default; background: transparent; }
+  .tb button.on { background: var(--ink); color: #fff7ec; }
+  .tb button.accent { background: var(--orange); color: #fff; }
+  .tb button.accent:hover { background: #d4561a; }
+  .tb button.accent:disabled { background: var(--orange); }
+  .tb svg { width: 18px; height: 18px; flex: none; }
+  #bVoice .x { display: none; }
+  #bVoice.muted .x { display: inline; }
+  #bVoice.muted .w1, #bVoice.muted .w2 { display: none; }
+  #bVoice.muted { color: var(--ink-soft); }
+  .tb .sep { width: 1px; height: 22px; background: var(--bar-line); margin: 0 6px; flex: none; }
+  .tb .label { min-width: 150px; padding: 0 8px; font-size: 14px; text-align: center; white-space: nowrap; }
+  .tb .label b { font-family: "Times New Roman", serif; font-weight: 400; color: var(--orange); margin-right: 6px; font-size: 16px; }
+  .ab { display: flex; align-items: center; gap: 2px; padding-left: 2px; }
+  .ab.hide { display: none; }
+  .ab .k { font-family: "Times New Roman", serif; font-style: italic; font-size: 18px; padding: 0 4px 0 8px; }
+  .ab output { min-width: 34px; text-align: center; font-family: "Times New Roman", serif; font-size: 18px; }
+  .ab button { min-width: 28px; padding: 0; font-size: 18px; }
+
+  .menu { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); min-width: 260px; padding: 8px;
+    border-radius: 14px; background: var(--bar); backdrop-filter: blur(14px); box-shadow: var(--shadow);
+    transition: opacity .25s, transform .25s; }
+  .menu.off { opacity: 0; transform: translate(-50%, 8px); pointer-events: none; }
+  .menu button { display: flex; width: 100%; align-items: baseline; gap: 10px; padding: 10px 12px; border: 0;
+    background: transparent; font: inherit; font-size: 14px; color: var(--ink); border-radius: 8px; cursor: pointer; text-align: left; }
+  .menu button:hover { background: rgba(42, 37, 33, 0.07); }
+  .menu button.cur { color: var(--orange); }
+  .menu button i { font-style: normal; font-family: "Times New Roman", serif; color: var(--ink-soft); margin-left: auto; }
+
+  @media (max-width: 640px) {
+    .tb .label { min-width: 0; }
+    .tb .txt { display: none; }
+    .hint { bottom: 84px; font-size: 13px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div class="brand">立体书 · 数学 Demo</div>
+<div id="hint" class="hint off"></div>
+<div id="loading">正在装订书页…</div>
+
+<div id="menu" class="menu off"></div>
+
+
+<div id="tb" class="tb off">
+  <button id="bMenu" title="目录"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button id="bPrev" title="上一页 (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="label" id="pageLabel"></div>
+  <button id="bNext" title="下一页 (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+  <span class="sep"></span>
+  <button id="bBuild" title="平面 / 立体 (Enter)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span class="txt">立体</span></button>
+  <button id="bPlay" class="accent" title="播放动画 (空格)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg><span class="txt">播放</span></button>
+  <button id="bView" title="复位视角"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
+  <button id="bVoice" title="语音讲解"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M15.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="x" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+  <div id="ab" class="ab hide">
+    <span class="sep"></span>
+    <span class="k">A</span><button data-k="a" data-d="-1">−</button><output id="oa"></output><button data-k="a" data-d="1">+</button>
+    <span class="k">B</span><button data-k="b" data-d="-1">−</button><output id="ob"></output><button data-k="b" data-d="1">+</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ================================================================
+   尺寸与常量（场景单位 ≈ 厘米）
+   ================================================================ */
+const W = 10, H = 14;               // 单页宽高
+const T = 0.55;                     // 单侧书页厚度
+const CV = 0.12, MG = 0.28;         // 封面板厚度、封面外延
+const CW = 1100, CH = 1540;         // 页面贴图像素
+const PX = CW / W;                  // 每单位像素
+const UNIT = 0.62, NMAX = 6;        // 数轴：单位长度、刻度范围 ±6
+const ZL = 1.5;                     // 数轴在右页上的位置（页面坐标 z）
+const LEN = NMAX * UNIT + 0.34;     // 数轴半长
+const BAR_H = 0.12;
+const LIFT = 1.3;                   // 立起后模型整体离开书页的高度
+const RIB_Y = 1.45, RIB_T = 0.04, RIB_D = 0.3;
+
+const C = {
+  ink: '#2a2521', soft: '#5f564e', gray: '#9b9187', line: '#d8cdbb',
+  orange: '#e8641e', orangeL: '#f6a35d', paper: '#f7f2e7', card: '#fbf7ee',
+  hl: 'rgba(255, 158, 64, 0.30)', box: '#fbefdc',
+};
+const F_CN = '"Noto Serif SC", "Songti SC", "SimSun", serif';
+const F_HAND = '"Ma Shan Zheng", "KaiTi", "STKaiti", cursive';
+const F_MATH = '"Times New Roman", "Times", "Noto Serif SC", serif';
+
+/* ================================================================
+   状态
+   ================================================================ */
+const S = {
+  opened: false, spread: 0, busy: false, playing: false,
+  built: [false, false, false, false],
+  step: [0, 0, 0, 0],
+  a: -3, b: 5, revealed: 0, view: 'read', sub: null,
+};
+
+/* ================================================================
+   工具：缓动、补间
+   ================================================================ */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = {
+  lin: t => t,
+  io: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  out: t => 1 - Math.pow(1 - t, 3),
+  back: t => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+  bounce: t => {
+    const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) return n * (t -= 1.5 / d) * t + .75;
+    if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + .9375;
+    return n * (t -= 2.625 / d) * t + .984375;
+  },
+};
+const CANCEL = Symbol('cancel');
+const tweens = [];
+function tween(dur, fn, ez = ease.io, ctl = null) {
+  return new Promise((res, rej) => tweens.push({ t0: performance.now(), dur, fn, ez, res, rej, ctl }));
+}
+const wait = (ms, ctl) => tween(ms, () => {}, ease.lin, ctl);
+function runTweens(now) {
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const t = tweens[i];
+    if (t.ctl && t.ctl.cancelled) { tweens.splice(i, 1); t.rej(CANCEL); continue; }
+    const p = Math.min(1, (now - t.t0) / t.dur);
+    t.fn(t.ez(p));
+    if (p >= 1) { tweens.splice(i, 1); t.res(); }
+  }
+}
+
+const fmt = n => (n < 0 ? '−' : '') + (Number.isInteger(n) ? Math.abs(n) : Math.abs(n).toFixed(1));
+const paren = n => n < 0 ? `(${fmt(n)})` : fmt(n);
+
+/* ================================================================
+   排版引擎：中文 + 数学混排（斜体字母、分数、高亮）
+   语法：{b:粗体} {o:橙色} {g:灰色} {w:白色}  ⟦分子¦分母⟧  \n 换行
+   ================================================================ */
+const USED = new Set();
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const OPS = '=+−×÷<>≤≥';
+const NO_START = '，。、；：！？）》”,.;:!?)';
+
+function tokenize(str) {
+  USED.add(str);
+  const toks = [], st = [];
+  const cur = () => ({ bold: st.includes('b'), col: [...st].reverse().map(k => ({ o: C.orange, g: C.gray, w: '#fff' })[k]).find(Boolean) || null });
+  let i = 0;
+  while (i < str.length) {
+    const c = str[i];
+    if (c === '{' && str[i + 2] === ':') { st.push(str[i + 1]); i += 3; continue; }
+    if (c === '}' && st.length) { st.pop(); i++; continue; }
+    if (c === '\n') { toks.push({ t: 'nl' }); i++; continue; }
+    if (c === '⟦') {
+      const j = str.indexOf('⟧', i); const [num, den] = str.slice(i + 1, j).split('¦');
+      toks.push({ t: 'frac', num, den, ...cur() }); i = j + 1; continue;
+    }
+    const prev = [...toks].reverse().find(t => t.t !== 'sp');
+    const unary = c === '−' && /[0-9]/.test(str[i + 1] || '') &&
+      (!prev || (prev.t === 'text' && !/[A-Za-z0-9)|]$/.test(prev.s)));
+    if (/[A-Za-z0-9.]/.test(c) || unary) {
+      let j = i + 1; const re = /[A-Za-z]/.test(c) ? /[A-Za-z]/ : /[0-9.]/;
+      while (j < str.length && re.test(str[j])) j++;
+      toks.push({ t: 'text', s: str.slice(i, j), ...cur() }); i = j; continue;
+    }
+    if (c === ' ') { toks.push({ t: 'sp', s: ' ' }); i++; continue; }
+    toks.push({ t: 'text', s: c, ...cur() }); i++;
+  }
+  return toks;
+}
+function tokFont(t, size) {
+  const b = t.bold ? 'bold ' : '';
+  if (/^[A-Za-z]+$/.test(t.s)) return `italic ${b}${Math.round(size * 1.1)}px ${F_MATH}`;
+  if (/^[−0-9.]+$/.test(t.s) || /^[+−=()|÷×<>\/:%≤≥]$/.test(t.s)) return `${b}${Math.round(size * 1.08)}px ${F_MATH}`;
+  return `${t.bold ? 700 : 400} ${size}px ${F_CN}`;
+}
+function inlineW(ctx, str, size) { return tokenize(str).reduce((w, t) => w + tokW(ctx, t, size), 0); }
+function drawInline(ctx, str, x, base, size, color) {
+  for (const t of tokenize(str)) { drawTok(ctx, t, x, base, size, color); x += tokW(ctx, t, size); }
+}
+function tokW(ctx, t, size) {
+  if (t.t === 'nl') return 0;
+  if (t.t === 'sp') return size * 0.22;
+  if (t.t === 'frac') { const s2 = size * 0.8; return Math.max(inlineW(ctx, t.num, s2), inlineW(ctx, t.den, s2)) + size * 0.36; }
+  ctx.font = tokFont(t, size);
+  let w = ctx.measureText(t.s).width;
+  if (OPS.includes(t.s)) w += size * 0.26;
+  if (/^[A-Za-z]+$/.test(t.s)) w += size * 0.06;
+  return w;
+}
+function drawTok(ctx, t, x, base, size, color) {
+  const col = t.col || color;
+  if (t.t === 'sp' || t.t === 'nl') return;
+  if (t.t === 'frac') {
+    const s2 = size * 0.8, w = tokW(ctx, t, size), cx = x + w / 2;
+    const bar = base - size * 0.32;
+    const wn = inlineW(ctx, t.num, s2), wd = inlineW(ctx, t.den, s2);
+    drawInline(ctx, t.num, cx - wn / 2, bar - size * 0.2, s2, col);
+    drawInline(ctx, t.den, cx - wd / 2, bar + s2 * 0.98, s2, col);
+    ctx.fillStyle = col; ctx.fillRect(x + size * 0.12, bar - size * 0.03, w - size * 0.24, Math.max(2, size * 0.055));
+    return;
+  }
+  ctx.font = tokFont(t, size); ctx.fillStyle = col;
+  ctx.fillText(t.s, x + (OPS.includes(t.s) ? size * 0.13 : 0), base);
+}
+function layout(ctx, str, size, maxW, lh = size * 1.62) {
+  const lines = []; let cur = { toks: [], w: 0, frac: false };
+  for (const t of tokenize(str)) {
+    if (t.t === 'nl') { lines.push(cur); cur = { toks: [], w: 0, frac: false }; continue; }
+    t.w = tokW(ctx, t, size);
+    const noStart = t.t === 'text' && NO_START.includes(t.s);
+    if (cur.w + t.w > maxW && cur.toks.length && !noStart) {
+      lines.push(cur); cur = { toks: [], w: 0, frac: false };
+      if (t.t === 'sp') continue;
+    }
+    cur.toks.push(t); cur.w += t.w; if (t.t === 'frac') cur.frac = true;
+  }
+  if (cur.toks.length) lines.push(cur);
+  let h = 0; for (const l of lines) { l.h = l.frac ? Math.max(lh, size * 2.5) : lh; h += l.h; }
+  return { lines, h, size, w: Math.max(0, ...lines.map(l => l.w)) };
+}
+function drawLay(ctx, lay, x, top, color = C.ink, align = 'left', boxW = 0) {
+  let y = top;
+  for (const l of lay.lines) {
+    let cx = align === 'center' ? x + (boxW - l.w) / 2 : align === 'right' ? x + boxW - l.w : x;
+    const base = l.frac ? y + l.h / 2 + lay.size * 0.5 : y + l.h / 2 + lay.size * 0.36;
+    for (const t of l.toks) { drawTok(ctx, t, cx, base, lay.size, color); cx += t.w; }
+    y += l.h;
+  }
+  return y;
+}
+function para(ctx, str, x, top, maxW, size = 30, opt = {}) {
+  const lay = layout(ctx, str, size, maxW, opt.lh || size * 1.62);
+  return drawLay(ctx, lay, x, top, opt.color || C.ink, opt.align || 'left', maxW);
+}
+function text(ctx, s, x, y, font, color = C.ink, align = 'left', spacing = 0) {
+  USED.add(s);
+  ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = spacing + 'px';
+  ctx.fillText(s, x, y);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.textAlign = 'left';
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function hand(ctx, s, x, y, size, rot = -0.04, color = C.orange, align = 'left') {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); text(ctx, s, 0, 0, `${size}px ${F_HAND}`, color, align); ctx.restore();
+}
+// 手绘感马克笔高亮
+function marker(ctx, x, y, w, h) {
+  ctx.save(); ctx.fillStyle = C.hl; ctx.beginPath();
+  ctx.moveTo(x + 4, y + 3); ctx.lineTo(x + w - 2, y); ctx.lineTo(x + w + 3, y + h - 4); ctx.lineTo(x - 2, y + h);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.orange; ctx.fillRect(x - 14, y + 4, 5, h - 8);
+  ctx.restore();
+}
+
+/* ================================================================
+   纸张与页面框架
+   ================================================================ */
+const PAPER = (() => {
+  const c = mk(CW, CH), x = c.getContext('2d');
+  x.fillStyle = C.paper; x.fillRect(0, 0, CW, CH);
+  const img = x.getImageData(0, 0, CW, CH), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 9; d[i] += n; d[i + 1] += n; d[i + 2] += n * 1.1; }
+  x.putImageData(img, 0, 0);
+  x.strokeStyle = 'rgba(120, 100, 70, 0.05)'; x.lineWidth = 1;
+  for (let i = 0; i < 380; i++) {
+    const px = Math.random() * CW, py = Math.random() * CH, a = Math.random() * 6.28, l = 6 + Math.random() * 18;
+    x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + Math.cos(a) * l * .6, py + Math.sin(a + .6) * l * .6, px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke();
+  }
+  return c;
+})();
+
+function pageBase(ctx, side, pageNo, header) {
+  ctx.drawImage(PAPER, 0, 0);
+  const g = side === 'R' ? ctx.createLinearGradient(0, 0, 170, 0) : ctx.createLinearGradient(CW, 0, CW - 170, 0);
+  g.addColorStop(0, 'rgba(70, 50, 28, 0.30)'); g.addColorStop(.25, 'rgba(70, 50, 28, 0.10)'); g.addColorStop(1, 'rgba(70, 50, 28, 0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+  const g2 = side === 'R' ? ctx.createLinearGradient(CW, 0, CW - 40, 0) : ctx.createLinearGradient(0, 0, 40, 0);
+  g2.addColorStop(0, 'rgba(70, 50, 28, 0.08)'); g2.addColorStop(1, 'rgba(70, 50, 28, 0)');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, CW, CH);
+  const x0 = side === 'L' ? 120 : 140, x1 = side === 'L' ? 970 : 980;
+  if (header) {
+    text(ctx, header, side === 'L' ? x0 : x1, 84, `400 22px ${F_CN}`, C.gray, side === 'L' ? 'left' : 'right', 3);
+    ctx.fillStyle = C.line; ctx.fillRect(x0, 104, x1 - x0, 1.5);
+  }
+  if (pageNo !== '') text(ctx, String(pageNo), side === 'L' ? x0 : x1, 1484, `24px ${F_MATH}`, C.gray, side === 'L' ? 'left' : 'right');
+}
+const LX = 120, LW = 850;   // 左页正文区
+const RX = 140, RW = 840;   // 右页正文区
+
+function sectionHead(ctx, x, y, tagStr, title, sub) {
+  ctx.font = `700 22px ${F_CN}`; const tw = ctx.measureText(tagStr).width + 28;
+  rr(ctx, x, y, tw, 38, 19); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, tagStr, x + 14, y + 27, `700 22px ${F_CN}`, '#fff', 'left', 2);
+  text(ctx, title, x, y + 118, `900 62px ${F_CN}`, C.ink);
+  text(ctx, sub, x, y + 162, `italic 26px ${F_MATH}`, C.gray, 'left', 1);
+  return y + 200;
+}
+function heading(ctx, s, x, y) {
+  ctx.fillStyle = C.orange; ctx.fillRect(x, y - 24, 8, 28);
+  text(ctx, s, x + 20, y, `700 32px ${F_CN}`, C.ink, 'left', 2);
+  return y + 30;
+}
+function numDot(ctx, label, cx, cy, on) {
+  ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2);
+  ctx.fillStyle = on ? C.orange : 'transparent'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = C.orange; ctx.stroke();
+  text(ctx, label, cx, cy + 8, `700 22px ${label.match(/\d/) ? F_MATH : F_CN}`, on ? '#fff' : C.orange, 'center');
+}
+function stepItem(ctx, label, str, x, y, maxW, on, size = 30) {
+  const lay = layout(ctx, str, size, maxW - 54);
+  if (on) marker(ctx, x - 6, y - 4, maxW + 12, lay.h + 8);
+  const firstH = lay.lines[0] ? lay.lines[0].h : size * 1.6;
+  numDot(ctx, label, x + 17, y + firstH / 2, on);
+  return drawLay(ctx, lay, x + 54, y, C.ink);
+}
+function noteBox(ctx, x, y, w, h, label) {
+  rr(ctx, x, y, w, h, 14); ctx.fillStyle = 'rgba(255, 250, 240, 0.9)'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#e3d6c2'; ctx.stroke();
+  if (label) {
+    ctx.font = `700 20px ${F_CN}`; const tw = ctx.measureText(label).width + 22;
+    rr(ctx, x + 22, y - 15, tw, 30, 6); ctx.fillStyle = C.orange; ctx.fill();
+    text(ctx, label, x + 33, y + 7, `700 20px ${F_CN}`, '#fff', 'left', 2);
+  }
+}
+
+/* ================================================================
+   平面数轴（右页插图），与立体模型共用坐标
+   ================================================================ */
+const pxX = x => (x + W / 2) * PX;
+const pxZ = z => (z + H / 2) * PX;
+function flatAxis(ctx, alpha = 1, hiZero = true) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  const y = pxZ(ZL), x0 = pxX(-LEN), x1 = pxX(LEN);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1 + 44, y); ctx.lineTo(x1 - 4, y - 17); ctx.lineTo(x1 - 4, y + 17); ctx.closePath();
+  ctx.fillStyle = C.ink; ctx.fill();
+  for (let n = -NMAX; n <= NMAX; n++) {
+    const x = pxX(n * UNIT);
+    ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x, y + 2); ctx.stroke();
+    text(ctx, fmt(n), x, y + 52, `${n === 0 && hiZero ? 'bold ' : ''}30px ${F_MATH}`, n === 0 && hiZero ? C.orange : C.ink, 'center');
+  }
+  ctx.restore();
+}
+// 平铺状态的小旗（与立体小旗"倒下"时的位置一致）
+function flatFlag(ctx, v, letter, color = C.ink, height = 1.45, alpha = 1, valueStr = null, left = false) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  const x = pxX(v * UNIT), y = pxZ(ZL), top = y - height * PX;
+  ctx.strokeStyle = color; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, top); ctx.stroke();
+  const fx = left ? x - 98 : x + 2;
+  rr(ctx, fx, top, 96, 54, 6); ctx.fillStyle = color === C.orange ? C.orange : '#fffaf0'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = color; ctx.stroke();
+  text(ctx, letter, fx + 12, top + 41, `italic bold 36px ${F_MATH}`, color === C.orange ? '#fff' : C.ink);
+  if (valueStr !== null) text(ctx, valueStr, fx + 86, top + 38, `24px ${F_MATH}`, color === C.orange ? '#fff' : C.soft, 'right');
+  ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+}
+// 播放讲解时印在右页下半部分的字幕：步骤号 + 标题 + 讲解 + 公式
+function pageSubtitle(ctx, i) {
+  if (!S.sub || S.sub.i !== i) return false;
+  const steps = NARR[i](), k = S.sub.k, s = steps[k - 1];
+  const x = RX, w = RW, top = 1030, FS = 36;
+  const body = layout(ctx, s.b, 32, w - 64, 50);
+  const lines = [].concat(s.f).slice(0, S.sub.n ?? 99);
+  const indent = inlineW(ctx, 'm ', FS);
+  const forms = lines.map((l, j) => layout(ctx, l, FS, w - 64 - (j ? indent : 0)));
+  const h = 80 + body.h + 12 + forms.reduce((t, f) => t + f.h, 0) + 18;
+  rr(ctx, x, top, w, h, 14); ctx.fillStyle = 'rgba(255, 249, 238, 0.96)'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = C.orange; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x + 50, top + 44, 22, 0, 7); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, String(k), x + 50, top + 56, `italic bold 30px ${F_MATH}`, '#fff', 'center');
+  text(ctx, s.t, x + 84, top + 57, `900 35px ${F_CN}`, C.ink, 'left', 3);
+  steps.forEach((_, j) => { ctx.beginPath(); ctx.arc(x + w - 34 - (steps.length - 1 - j) * 26, top + 44, 8, 0, 7); ctx.fillStyle = j < k ? C.orange : '#e3d8c6'; ctx.fill(); });
+  drawLay(ctx, body, x + 32, top + 76, C.soft);
+  const fy = top + 76 + body.h + 6;
+  ctx.strokeStyle = '#e0d2bd'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(x + 32, fy); ctx.lineTo(x + w - 32, fy); ctx.stroke(); ctx.setLineDash([]);
+  let ly = fy + 4;
+  forms.forEach((f, j) => { ly = drawLay(ctx, f, x + 32 + (j ? indent : 0), ly, C.ink); });
+  return true;
+}
+// 立体化后平面底图淡化；播放讲解时完全隐藏，减少干扰
+const ghost = i => S.sub && S.sub.i === i ? 0 : 0.16;
+function caption(ctx, label, s, y) {
+  text(ctx, label, RX, y, `700 24px ${F_CN}`, C.ink, 'left', 2);
+  ctx.font = `700 24px ${F_CN}`; const w = ctx.measureText(label).width;
+  text(ctx, s, RX + w + 18, y, `24px ${F_CN}`, C.soft);
+}
+
+/* ================================================================
+   页面内容
+   ================================================================ */
+// ---- 扉页
+function drawL0(ctx) {
+  pageBase(ctx, 'L', '', '');
+  const cx = LX + LW / 2;
+  text(ctx, '初中数学 · 互动立体书', cx, 300, `400 26px ${F_CN}`, C.gray, 'center', 8);
+  text(ctx, '数轴与中点', cx, 470, `900 104px ${F_CN}`, C.ink, 'center', 6);
+  text(ctx, 'Number Line & Midpoint', cx, 540, `italic 34px ${F_MATH}`, C.soft, 'center', 2);
+  // 手绘小数轴
+  ctx.save(); ctx.strokeStyle = C.orange; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  const y = 760, x0 = LX + 80, x1 = LX + LW - 80;
+  ctx.beginPath(); ctx.moveTo(x0, y + 2);
+  for (let x = x0; x <= x1; x += 20) ctx.lineTo(x, y + Math.sin(x * .05) * 1.5);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1 + 22, y); ctx.lineTo(x1 - 4, y - 12); ctx.moveTo(x1 + 22, y); ctx.lineTo(x1 - 4, y + 12); ctx.stroke();
+  for (let i = 0; i <= 8; i++) { const x = x0 + 40 + i * (x1 - x0 - 80) / 8; ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y + 6); ctx.stroke(); }
+  const xa = x0 + 40 + 1 * (x1 - x0 - 80) / 8, xb = x0 + 40 + 7 * (x1 - x0 - 80) / 8, xm = (xa + xb) / 2;
+  ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(xa, y - 30); ctx.quadraticCurveTo(xm, y - 160, xb, y - 30); ctx.stroke(); ctx.setLineDash([]);
+  for (const [x, c] of [[xa, C.ink], [xb, C.ink], [xm, C.orange]]) { ctx.beginPath(); ctx.arc(x, y, 11, 0, 7); ctx.fillStyle = c; ctx.fill(); }
+  ctx.restore();
+  text(ctx, 'A', xa, y + 52, `italic 34px ${F_MATH}`, C.ink, 'center');
+  text(ctx, 'B', xb, y + 52, `italic 34px ${F_MATH}`, C.ink, 'center');
+  text(ctx, 'M', xm, y + 52, `italic bold 34px ${F_MATH}`, C.orange, 'center');
+  hand(ctx, '让图形从书页上站起来', cx, 1000, 50, -0.03, C.orange, 'center');
+  text(ctx, '第 1 册 · 示例章节', cx, 1380, `400 24px ${F_CN}`, C.gray, 'center', 6);
+}
+// ---- 目录
+function drawR0(ctx) {
+  pageBase(ctx, 'R', 'i', '');
+  text(ctx, '目  录', RX, 250, `900 64px ${F_CN}`, C.ink, 'left', 6);
+  text(ctx, 'Contents', RX + 230, 250, `italic 30px ${F_MATH}`, C.gray);
+  const items = [['1', '数轴的认识', '2'], ['2', '中点公式的推理', '4'], ['3', '动手试一试', '6']];
+  let y = 400;
+  for (const [n, t, p] of items) {
+    text(ctx, n, RX, y, `italic 52px ${F_MATH}`, C.orange);
+    text(ctx, t, RX + 66, y - 4, `700 36px ${F_CN}`, C.ink);
+    ctx.font = `700 36px ${F_CN}`; const tw = ctx.measureText(t).width;
+    ctx.fillStyle = C.gray; for (let x = RX + 66 + tw + 24; x < RX + RW - 60; x += 14) ctx.fillRect(x, y - 12, 3, 3);
+    text(ctx, p, RX + RW, y - 4, `32px ${F_MATH}`, C.ink, 'right');
+    y += 96;
+  }
+  const by = 760; noteBox(ctx, RX, by, RW, 360, '怎么读这本书');
+  const tips = [
+    ['1', '{b:点击右页插图} —— 平面图形会像立体书一样立起来'],
+    ['2', '{b:按住拖动} —— 旋转视角；{b:滚轮} —— 缩放'],
+    ['3', '{b:底部 ▶} —— 播放立体推导动画，左页同步高亮步骤'],
+    ['4', '{b:← →} 方向键或底部箭头 —— 翻页'],
+  ];
+  let ty = by + 50;
+  for (const [n, s] of tips) ty = stepItem(ctx, n, s, RX + 30, ty, RW - 60, false, 28) + 18;
+  hand(ctx, '从第 2 页开始吧 →', RX + RW, 1330, 44, -0.05, C.orange, 'right');
+}
+
+// ---- 第 1 节：数轴的认识
+function drawL1(ctx) {
+  pageBase(ctx, 'L', 2, '第一章 · 有理数');
+  const st = S.step[1];
+  let y = sectionHead(ctx, LX, 150, '第 1 节', '数轴的认识', 'The Number Line');
+  y = para(ctx, '在一条直线上取一点作为原点，规定好正方向和单位长度，直线上的每一个点就都能表示一个数。', LX, y, LW, 30) + 26;
+  // 定义框
+  const lay = layout(ctx, '{b:数轴}：规定了{o:原点}、{o:正方向}和{o:单位长度}的直线叫做数轴。', 32, LW - 70);
+  rr(ctx, LX, y, LW, lay.h + 40, 10); ctx.fillStyle = C.box; ctx.fill();
+  ctx.fillStyle = C.orange; ctx.fillRect(LX, y, 8, lay.h + 40);
+  drawLay(ctx, lay, LX + 40, y + 20);
+  y += lay.h + 40 + 62;
+  y = heading(ctx, '三要素', LX, y) + 18;
+  y = stepItem(ctx, '1', '{b:原点} {b:O}：表示数 0 的点，是数轴的“起点”。', LX, y, LW, st === 1) + 10;
+  y = stepItem(ctx, '2', '{b:正方向}：通常取向右为正方向，用箭头表示。', LX, y, LW, st === 2) + 10;
+  y = stepItem(ctx, '3', '{b:单位长度}：相邻两个刻度之间的距离都相等。', LX, y, LW, st === 3) + 40;
+  y = heading(ctx, '读一读', LX, y) + 18;
+  y = stepItem(ctx, '读', '原点右边的点表示{o:正数}，左边的点表示{o:负数}。如右图：点 P 表示 3，点 Q 表示 −2。', LX, y, LW, st === 4) + 50;
+  // 想一想
+  const qy = Math.max(y, 1205);
+  noteBox(ctx, LX, qy, LW, 200, '想一想');
+  para(ctx, '数轴上表示 −4 的点在原点的哪一侧？离原点几个单位长度？', LX + 30, qy + 30, LW - 60, 28);
+  ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink;
+  ctx.strokeRect(LX + 34, qy + 128, 24, 24); text(ctx, '左侧，4 个单位', LX + 72, qy + 150, `28px ${F_CN}`);
+  ctx.strokeRect(LX + 384, qy + 128, 24, 24); text(ctx, '右侧，4 个单位', LX + 422, qy + 150, `28px ${F_CN}`);
+  hand(ctx, '三要素，缺一不可！', LX + LW - 10, 1000, 40, -0.06, C.orange, 'right');
+}
+function drawR1(ctx) {
+  pageBase(ctx, 'R', 3, '数轴与中点 · 立体数学');
+  const built = S.built[1], a = built ? ghost(1) : 1;
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  // 图例
+  let lx = RX; const ly = 226;
+  ctx.beginPath(); ctx.arc(lx + 12, ly - 8, 10, 0, 7); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, '原点', lx + 32, ly, `26px ${F_CN}`, C.soft); lx += 150;
+  ctx.strokeStyle = C.orange; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(lx, ly - 8); ctx.lineTo(lx + 40, ly - 8); ctx.lineTo(lx + 30, ly - 17); ctx.moveTo(lx + 40, ly - 8); ctx.lineTo(lx + 30, ly + 1); ctx.stroke();
+  text(ctx, '正方向', lx + 52, ly, `26px ${F_CN}`, C.soft); lx += 180;
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.quadraticCurveTo(lx + 20, ly - 30, lx + 40, ly); ctx.stroke();
+  text(ctx, '单位长度', lx + 52, ly, `26px ${F_CN}`, C.soft);
+
+  const y = pxZ(ZL);
+  ctx.save(); ctx.globalAlpha = a;
+  // 原点圆环
+  ctx.beginPath(); ctx.arc(pxX(0), y, 26, 0, 7); ctx.fillStyle = 'rgba(232,100,30,0.25)'; ctx.fill();
+  // 单位长度弧
+  ctx.strokeStyle = C.orange; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(pxX(0), y - 14); ctx.quadraticCurveTo(pxX(UNIT / 2), y - 170, pxX(UNIT), y - 14); ctx.stroke();
+  // 正方向箭头
+  const ax0 = pxX(1.4), ax1 = pxX(3.3), ay = y - 115;
+  ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1 - 20, ay); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax1 + 10, ay); ctx.lineTo(ax1 - 26, ay - 24); ctx.lineTo(ax1 - 26, ay + 24); ctx.closePath(); ctx.fillStyle = C.orange; ctx.fill();
+  ctx.restore();
+  flatAxis(ctx, a);
+  flatFlag(ctx, 3, 'P', C.ink, 2.1, a, '3');
+  flatFlag(ctx, -2, 'Q', C.ink, 2.1, a, '−2', true);
+  if (pageSubtitle(ctx, 1)) return;
+  caption(ctx, '图 1', '数轴的三要素：原点、正方向、单位长度', 1330);
+  if (!built) hand(ctx, '点一下插图，让它立起来 ↗', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+  else hand(ctx, '拖动可旋转观察，点 ▶ 播放', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+}
+
+// ---- 第 2 节：中点公式的推理
+function drawL2(ctx) {
+  pageBase(ctx, 'L', 4, '第一章 · 有理数');
+  const st = S.step[2];
+  let y = sectionHead(ctx, LX, 150, '第 2 节', '中点公式的推理', 'Midpoint on a Number Line');
+  const lay = layout(ctx, '{b:问题}　数轴上点 A 表示数 a，点 B 表示数 b（a < b），线段 AB 的中点 M 表示的数 m 是多少？', 30, LW - 70);
+  rr(ctx, LX, y, LW, lay.h + 36, 10); ctx.fillStyle = C.box; ctx.fill();
+  ctx.fillStyle = C.orange; ctx.fillRect(LX, y, 8, lay.h + 36);
+  drawLay(ctx, lay, LX + 40, y + 18);
+  y += lay.h + 36 + 62;
+  y = heading(ctx, '推理过程', LX, y) + 16;
+  y = stepItem(ctx, '1', '{b:量距离}　AB = b − a', LX, y, LW, st === 1) + 6;
+  y = stepItem(ctx, '2', '{b:对折平分}　每一半 = ⟦b − a¦2⟧', LX, y, LW, st === 2) + 6;
+  y = stepItem(ctx, '3', '{b:从 A 走到 M}　m = a + ⟦b − a¦2⟧', LX, y, LW, st === 3) + 6;
+  y = stepItem(ctx, '4', '{b:化简}　m = ⟦2a + b − a¦2⟧ = ⟦a + b¦2⟧', LX, y, LW, st === 4) + 36;
+  // 公式框
+  rr(ctx, LX, y, LW, 150, 14); ctx.lineWidth = 3; ctx.strokeStyle = C.orange; ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 246, 232, 0.8)'; ctx.fill();
+  text(ctx, '中点公式', LX + 34, y + 88, `900 36px ${F_CN}`, C.orange, 'left', 4);
+  const fl = layout(ctx, 'm = ⟦a + b¦2⟧', 52, 400);
+  drawLay(ctx, fl, LX + 290, y + 10, C.ink);
+  hand(ctx, '两数的平均数！', LX + LW - 24, y + 96, 38, -0.06, C.orange, 'right');
+  y += 186;
+  para(ctx, '{g:例}　a = −2，b = 4 时，m = ⟦−2 + 4¦2⟧ = 1。', LX, y, LW, 30);
+}
+function drawR2(ctx) {
+  pageBase(ctx, 'R', 5, '数轴与中点 · 立体数学');
+  const built = S.built[2], al = built ? ghost(2) : 1, st = S.step[2];
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  // 步骤条
+  const steps = ['量', '折', '落', '算'];
+  for (let i = 0; i < 4 && !S.sub; i++) {
+    const x = RX + i * 210, on = st === i + 1;
+    rr(ctx, x, 200, 180, 56, 28); ctx.fillStyle = on ? C.orange : 'rgba(255,250,240,0.9)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = on ? C.orange : '#e0d3bf'; ctx.stroke();
+    text(ctx, `${i + 1}`, x + 34, 239, `italic 28px ${F_MATH}`, on ? '#fff' : C.orange, 'center');
+    text(ctx, steps[i], x + 100, 238, `700 28px ${F_CN}`, on ? '#fff' : C.ink, 'center');
+    if (i < 3) { ctx.fillStyle = C.gray; ctx.fillRect(x + 184, 227, 22, 2); }
+  }
+  const a = -2, b = 4, m = 1, y = pxZ(ZL), ry = pxZ(ZL - RIB_Y);
+  ctx.save(); ctx.globalAlpha = al;
+  ctx.fillStyle = C.orangeL; ctx.fillRect(pxX(a * UNIT), ry - 14, pxX(m * UNIT) - pxX(a * UNIT), 28);
+  ctx.fillStyle = C.orange; ctx.fillRect(pxX(m * UNIT), ry - 14, pxX(b * UNIT) - pxX(m * UNIT), 28);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(pxX(a * UNIT), ry - 14, pxX(b * UNIT) - pxX(a * UNIT), 28);
+  ctx.setLineDash([10, 8]); ctx.beginPath(); ctx.moveTo(pxX(m * UNIT), ry - 60); ctx.lineTo(pxX(m * UNIT), y - 6); ctx.stroke(); ctx.setLineDash([]);
+  text(ctx, '折痕', pxX(m * UNIT), ry - 72, `24px ${F_CN}`, C.soft, 'center');
+  ctx.restore();
+  flatAxis(ctx, al, false);
+  flatFlag(ctx, a, 'A', C.ink, 2.4, al, '−2');
+  flatFlag(ctx, b, 'B', C.ink, 2.4, al, '4');
+  ctx.save(); ctx.globalAlpha = al;
+  ctx.beginPath(); ctx.arc(pxX(m * UNIT), y, 12, 0, 7); ctx.fillStyle = C.orange; ctx.fill();
+  text(ctx, 'M', pxX(m * UNIT), y + 92, `italic bold 32px ${F_MATH}`, C.orange, 'center');
+  ctx.restore();
+  if (pageSubtitle(ctx, 2)) return;
+  caption(ctx, '图 2', '把线段 AB 对折，折痕落下的位置就是中点', 1330);
+  if (!built) hand(ctx, '点一下插图，让它立起来 ↗', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+  else hand(ctx, '点 ▶ 播放对折推导', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+}
+
+// ---- 第 3 节：动手试一试
+function drawL3(ctx) {
+  pageBase(ctx, 'L', 6, '第一章 · 有理数');
+  const { a, b } = S, st = S.step[3], rv = S.revealed;
+  const d = Math.abs(b - a), m = (a + b) / 2;
+  let y = sectionHead(ctx, LX, 150, '第 3 节', '动手试一试', 'Try It Yourself');
+  y = para(ctx, '在底部工具栏设置 A、B 的坐标（−6 ～ 6），也可以直接拖动右页的小旗子。设置好后点 ▶，看立体动画怎样算出中点。', LX, y, LW, 30) + 30;
+  // 当前值
+  for (const [i, k, v] of [[0, 'A', a], [1, 'B', b]]) {
+    const x = LX + i * 430;
+    rr(ctx, x, y, 400, 96, 14); ctx.fillStyle = C.box; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#e3d6c2'; ctx.stroke();
+    text(ctx, k, x + 34, y + 66, `italic bold 50px ${F_MATH}`, C.ink);
+    text(ctx, '点', x + 92, y + 62, `30px ${F_CN}`, C.soft);
+    drawLay(ctx, layout(ctx, `${k.toLowerCase()} = ${fmt(v)}`, 44, 300), x + 160, y + 4, C.orange);
+  }
+  y += 96 + 70;
+  y = heading(ctx, '计算过程', LX, y) + 16;
+  const blank = '{g:＿＿}';
+  y = stepItem(ctx, '1', `{b:两点距离}　AB = |b − a| = |${fmt(b)} − ${paren(a)}| = ` + (rv >= 1 ? `{o:${fmt(d)}}` : blank), LX, y, LW, st === 1) + 6;
+  y = stepItem(ctx, '2', `{b:对折平分}　每一半 = ` + (rv >= 1 ? `${fmt(d)} ÷ 2 = ` : 'AB ÷ 2 = ') + (rv >= 2 ? `{o:${fmt(d / 2)}}` : blank), LX, y, LW, st === 2) + 6;
+  y = stepItem(ctx, '3', `{b:中点坐标}　m = ⟦a + b¦2⟧ = ⟦${fmt(a)} + ${paren(b)}¦2⟧ = ` + (rv >= 3 ? `{o:${fmt(m)}}` : blank), LX, y, LW, st === 3 || st === 4) + 34;
+  // 结果
+  rr(ctx, LX, y, LW, 120, 14); ctx.lineWidth = 3; ctx.strokeStyle = rv >= 4 ? C.orange : '#e3d6c2'; ctx.stroke();
+  ctx.fillStyle = rv >= 4 ? 'rgba(255, 240, 222, 0.9)' : 'rgba(255, 250, 240, 0.7)'; ctx.fill();
+  if (rv >= 4) drawLay(ctx, layout(ctx, `中点 {o:M} 表示的数是 {o:${fmt(m)}}`, 40, LW - 60), LX + 40, y + 20);
+  else drawLay(ctx, layout(ctx, '{g:点击 ▶ 播放，揭晓中点 M 的位置}', 32, LW - 60), LX + 40, y + 28);
+  y += 120;
+  if (a === b) para(ctx, '{g:A、B 重合了：中点就是它自己。}', LX, y + 24, LW, 28);
+  hand(ctx, '试试同号、异号，甚至相等！', LX + LW - 10, 1420, 40, -0.05, C.orange, 'right');
+}
+function drawR3(ctx) {
+  pageBase(ctx, 'R', 7, '数轴与中点 · 立体数学');
+  const built = S.built[3], al = built ? ghost(3) : 1;
+  text(ctx, '插 图', RX, 170, `700 24px ${F_CN}`, C.gray, 'left', 6);
+  rr(ctx, RX, 200, 420, 60, 30); ctx.fillStyle = 'rgba(255,250,240,0.9)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#e0d3bf'; ctx.stroke();
+  drawLay(ctx, layout(ctx, `当前　A(${fmt(S.a)})　B(${fmt(S.b)})`, 28, 400), RX + 28, 202, C.ink);
+  flatAxis(ctx, al, false);
+  flatFlag(ctx, S.a, 'A', C.ink, 2.4, al, fmt(S.a));
+  flatFlag(ctx, S.b, 'B', C.ink, 2.4, al, fmt(S.b));
+  if (pageSubtitle(ctx, 3)) return;
+  caption(ctx, '图 3', '拖动小旗子，或在工具栏里设置 A、B', 1330);
+  if (!built) hand(ctx, '点一下插图，让它立起来 ↗', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+  else hand(ctx, '拖动旗子 → 点 ▶ 计算中点', RX + RW, 1410, 40, -0.04, C.orange, 'right');
+}
+
+const SPREADS = [
+  { title: '扉页 · 目录', L: drawL0, R: drawR0, pn: 'i' },
+  { title: '数轴的认识', L: drawL1, R: drawR1, pn: '2–3' },
+  { title: '中点公式的推理', L: drawL2, R: drawR2, pn: '4–5' },
+  { title: '动手试一试', L: drawL3, R: drawR3, pn: '6–7' },
+];
+const PAGE_CANVAS = SPREADS.map(() => ({ L: mk(CW, CH), R: mk(CW, CH) }));
+
+/* ================================================================
+   three.js 场景
+   ================================================================ */
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+app.appendChild(renderer.domElement);
+const ANISO = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#d9ccb6');
+scene.fog = new THREE.Fog('#d9ccb6', 45, 95);
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 200);
+
+scene.add(new THREE.HemisphereLight('#fffaf2', '#cbbda6', 1.35));
+const sun = new THREE.DirectionalLight('#fff3e2', 2.1);
+sun.position.set(-7, 20, 9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 50 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; sun.shadow.radius = 4;
+scene.add(sun);
+
+function canvasTex(cv, repeat) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
+  return t;
+}
+
+// ---- 桌面与桌垫
+(() => {
+  const c = mk(1024, 1024), x = c.getContext('2d');
+  x.fillStyle = '#d6b88f'; x.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 300; i++) {
+    const y0 = Math.random() * 1024;
+    x.strokeStyle = `rgba(${130 + Math.random() * 40 | 0}, ${90 + Math.random() * 30 | 0}, 55, ${0.05 + Math.random() * 0.1})`;
+    x.lineWidth = 1 + Math.random() * 3; x.beginPath(); x.moveTo(0, y0);
+    for (let px = 0; px <= 1024; px += 32) x.lineTo(px, y0 + Math.sin(px * 0.006 + i) * 8);
+    x.stroke();
+  }
+  x.fillStyle = 'rgba(90, 60, 30, 0.25)'; for (let k = 1; k < 4; k++) x.fillRect(0, k * 256, 1024, 2);
+  const desk = new THREE.Mesh(new THREE.PlaneGeometry(140, 140).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ map: canvasTex(c, [8, 8]), roughness: .85 }));
+  desk.position.y = -CV - 0.06; desk.receiveShadow = true; scene.add(desk);
+
+  const s = new THREE.Shape(), w = 38, h = 26, r = 1.2;
+  s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+  s.lineTo(w / 2, h / 2 - r); s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); s.lineTo(-w / 2 + r, h / 2);
+  s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); s.lineTo(-w / 2, -h / 2 + r); s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+  const mat = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false }).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: '#9cb0a4', roughness: 1 }));
+  mat.position.y = -CV - 0.055; mat.receiveShadow = true; scene.add(mat);
+})();
+
+// ---- 材质
+const INK = '#2a2521';
+const matCream = new THREE.MeshStandardMaterial({ color: '#f3ecdd', roughness: .9 });
+const matOrange = new THREE.MeshStandardMaterial({ color: '#ec6a22', roughness: .6 });
+const matOrangeD = new THREE.MeshStandardMaterial({ color: '#c94f12', roughness: .6 });
+const matInk = new THREE.MeshStandardMaterial({ color: '#3a332d', roughness: .7 });
+const edgeMat = new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: .9 });
+const hullMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+function ink(mesh, th = 25) { mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, th), edgeMat)); return mesh; }
+function hull(mesh, s = 1.12) { const h = new THREE.Mesh(mesh.geometry, hullMat); h.scale.setScalar(s); mesh.add(h); return mesh; }
+function M(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; return m; }
+
+// ---- 书本
+const book = new THREE.Group(); scene.add(book);
+const PIV = new THREE.Vector3(0, T, 0);
+
+const edgeTex = (() => {
+  const c = mk(64, 256), x = c.getContext('2d'); x.fillStyle = '#efe7d6'; x.fillRect(0, 0, 64, 256);
+  for (let y = 0; y < 256; y += 2) { x.fillStyle = `rgba(120,100,70,${0.05 + Math.random() * 0.12})`; x.fillRect(0, y, 64, 1); }
+  return canvasTex(c);
+})();
+const blockMat = new THREE.MeshStandardMaterial({ map: edgeTex, roughness: 1 });
+const blockTop = new THREE.MeshStandardMaterial({ color: '#f4eee2', roughness: 1 });
+const clothTex = (() => {
+  const c = mk(512, 512), x = c.getContext('2d'); x.fillStyle = '#e4a93a'; x.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 512; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .08})`; x.fillRect(0, i, 512, 1); x.fillRect(i, 0, 1, 512); }
+  return canvasTex(c, [3, 3]);
+})();
+const coverMat = new THREE.MeshStandardMaterial({ map: clothTex, roughness: .9 });
+
+function blockMesh() {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(W, T, H), [blockMat, blockMat, blockTop, blockTop, blockMat, blockMat]);
+  m.castShadow = m.receiveShadow = true; return m;
+}
+// 右半：书页块 + 封底
+const rightBlock = blockMesh(); rightBlock.position.set(W / 2, T / 2, 0); book.add(rightBlock);
+const backCover = ink(M(new THREE.BoxGeometry(W + MG, CV, H + 2 * MG), coverMat)); backCover.position.set((W + MG) / 2, -CV / 2, 0); book.add(backCover);
+
+// 页面纹理（静态左右页 + 翻页正反面）
+const texL = canvasTex(PAGE_CANVAS[0].L), texR = canvasTex(PAGE_CANVAS[0].R);
+const texFF = canvasTex(PAGE_CANVAS[0].R), texFB = canvasTex(PAGE_CANVAS[0].L, [-1, 1]);
+texFB.offset.x = 1;
+const ALL_TEX = [texL, texR, texFF, texFB];
+const pageMat = map => new THREE.MeshStandardMaterial({ map, roughness: 1 });
+
+const rightPage = new THREE.Mesh(new THREE.PlaneGeometry(W, H).rotateX(-Math.PI / 2), pageMat(texR));
+rightPage.position.set(W / 2, T + 0.003, 0); rightPage.receiveShadow = true; book.add(rightPage);
+
+// 左半（绕书脊旋转）：书页块 + 封面 + 左页 —— 子物体按"打开状态"布局
+const leftHalf = new THREE.Group(); leftHalf.position.copy(PIV); book.add(leftHalf);
+const leftBlock = blockMesh(); leftBlock.position.set(-W / 2, -T / 2, 0); leftHalf.add(leftBlock);
+const frontCover = ink(M(new THREE.BoxGeometry(W + MG, CV, H + 2 * MG), coverMat)); frontCover.position.set(-(W + MG) / 2, -T - CV / 2, 0); leftHalf.add(frontCover);
+const leftPage = new THREE.Mesh(new THREE.PlaneGeometry(W, H).rotateX(-Math.PI / 2), pageMat(texL));
+leftPage.position.set(-W / 2, 0.003, 0); leftPage.receiveShadow = true; leftHalf.add(leftPage);
+
+// 封面画
+const coverArtCanvas = mk(1028, 1456);
+function drawCover() {
+  const c = coverArtCanvas, x = c.getContext('2d'), w = c.width, h = c.height;
+  x.fillStyle = '#e4a93a'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < h; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .07})`; x.fillRect(0, i, w, 1); }
+  for (let i = 0; i < w; i += 3) { x.fillStyle = `rgba(150,90,10,${Math.random() * .07})`; x.fillRect(i, 0, 1, h); }
+  const g = x.createLinearGradient(0, 0, 90, 0); g.addColorStop(0, 'rgba(90,50,0,.35)'); g.addColorStop(1, 'rgba(90,50,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 90, h);
+  x.fillStyle = 'rgba(90,50,0,.25)'; x.fillRect(64, 0, 3, h);
+  rr(x, 150, 210, w - 260, 560, 18); x.fillStyle = '#f7f0e0'; x.fill(); x.lineWidth = 4; x.strokeStyle = INK; x.stroke();
+  text(x, '初中数学 · 互动立体书', w / 2 + 20, 300, `400 30px ${F_CN}`, C.soft, 'center', 8);
+  text(x, '数轴与中点', w / 2 + 20, 460, `900 112px ${F_CN}`, C.ink, 'center', 6);
+  text(x, 'POP-UP MATH', w / 2 + 20, 540, `italic 36px ${F_MATH}`, C.orange, 'center', 10);
+  // 封面小插图：立起来的数轴
+  const y = 690, x0 = 250, x1 = w - 180;
+  x.strokeStyle = INK; x.lineWidth = 5; x.beginPath(); x.moveTo(x0, y); x.lineTo(x1, y); x.stroke();
+  x.beginPath(); x.moveTo(x1 + 26, y); x.lineTo(x1 - 4, y - 12); x.lineTo(x1 - 4, y + 12); x.closePath(); x.fillStyle = INK; x.fill();
+  for (let i = 0; i <= 10; i++) { const px = x0 + 20 + i * (x1 - x0 - 40) / 10; x.beginPath(); x.moveTo(px, y - 12); x.lineTo(px, y); x.stroke(); }
+  const xa = x0 + 20 + 2 * (x1 - x0 - 40) / 10, xb = x0 + 20 + 8 * (x1 - x0 - 40) / 10;
+  x.fillStyle = C.orange; x.fillRect(xa, y - 72, xb - xa, 18);
+  for (const [px, c] of [[xa, INK], [xb, INK], [(xa + xb) / 2, C.orange]]) {
+    x.strokeStyle = c; x.lineWidth = 4; x.beginPath(); x.moveTo(px, y); x.lineTo(px, y - 120); x.stroke();
+    x.fillStyle = c; x.fillRect(px, y - 120, 36, 24);
+  }
+  hand(x, '翻开它，图形会站起来', w / 2 + 20, 1000, 60, -0.03, '#fff8ea', 'center');
+  text(x, '第 1 册', w / 2 + 20, 1320, `700 32px ${F_CN}`, '#7a4a08', 'center', 10);
+  coverTex.needsUpdate = true;
+}
+const coverTex = canvasTex(coverArtCanvas);
+const coverArt = new THREE.Mesh(new THREE.PlaneGeometry(W + MG, H + 2 * MG).rotateX(-Math.PI / 2).rotateZ(Math.PI),
+  new THREE.MeshStandardMaterial({ map: coverTex, roughness: .9 }));
+coverArt.position.set(-(W + MG) / 2, -T - CV - 0.004, 0); leftHalf.add(coverArt);
+
+// 书脊
+const spine = ink(M(new THREE.BoxGeometry(CV, 2 * T + 2 * CV, H + 2 * MG), coverMat)); book.add(spine);
+
+function setOpen(o) {
+  leftHalf.rotation.z = -Math.PI * (1 - o);
+  book.position.x = -(W / 2) * (1 - o);
+  spine.rotation.z = (Math.PI / 2) * o;
+  spine.position.set(lerp(-CV / 2, 0, o), lerp(T, -CV / 2 - 0.004, o), 0);
+}
+setOpen(0);
+
+// ---- 翻页纸（弯曲网格，正反两面）
+const SEG = 40;
+const flipGeo = (() => {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array((SEG + 1) * 2 * 3), uv = new Float32Array((SEG + 1) * 2 * 2), idx = [];
+  for (let i = 0; i <= SEG; i++) {
+    uv.set([i / SEG, 1, i / SEG, 0], i * 4);
+    if (i < SEG) { const a = i * 2, b = (i + 1) * 2, c = a + 1, d = b + 1; idx.push(a, c, b, b, c, d); }
+  }
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx); return g;
+})();
+const flipGroup = new THREE.Group(); flipGroup.position.copy(PIV); flipGroup.visible = false; book.add(flipGroup);
+const flipFront = new THREE.Mesh(flipGeo, new THREE.MeshStandardMaterial({ map: texFF, roughness: 1, side: THREE.FrontSide }));
+const flipBack = new THREE.Mesh(flipGeo, new THREE.MeshStandardMaterial({ map: texFB, roughness: 1, side: THREE.BackSide }));
+flipFront.castShadow = flipBack.castShadow = true;
+flipGroup.add(flipFront, flipBack);
+function setFlip(theta, curl) {
+  const p = flipGeo.attributes.position.array, du = W / SEG;
+  let x = 0, y = 0.008;
+  for (let i = 0; i <= SEG; i++) {
+    p.set([x, y, -H / 2, x, y, H / 2], i * 6);
+    const u = (i + .5) / SEG;
+    const a = clamp(theta + curl * u * u, 0.0, Math.PI);
+    x += Math.cos(a) * du; y += Math.sin(a) * du;
+  }
+  flipGeo.attributes.position.needsUpdate = true;
+  flipGeo.computeVertexNormals(); flipGeo.computeBoundingSphere();
+}
+
+/* ================================================================
+   页面绘制与纹理同步
+   ================================================================ */
+function redraw(i, side) {
+  const cv = PAGE_CANVAS[i][side], ctx = cv.getContext('2d');
+  ctx.textBaseline = 'alphabetic';
+  SPREADS[i][side](ctx);
+  for (const t of ALL_TEX) if (t.image === cv) t.needsUpdate = true;
+}
+function redrawAll() { SPREADS.forEach((_, i) => { redraw(i, 'L'); redraw(i, 'R'); }); drawCover(); DRAWABLES.forEach(f => f()); }
+function useImage(tex, cv) { tex.image = cv; tex.needsUpdate = true; }
+
+/* ================================================================
+   立体元件：卡片、小旗、数轴
+   ================================================================ */
+const DRAWABLES = [];
+const matCardSide = new THREE.MeshStandardMaterial({ color: '#efe6d3', roughness: 1 });
+function card(w, h, draw, res = 300) {
+  const cv = mk(Math.round(w * res), Math.round(h * res)), ctx = cv.getContext('2d');
+  const tex = canvasTex(cv);
+  const geo = new THREE.BoxGeometry(w, h, 0.025); geo.translate(0, h / 2, 0);
+  const front = new THREE.MeshStandardMaterial({ map: tex, roughness: .95 });
+  const mesh = new THREE.Mesh(geo, [matCardSide, matCardSide, matCardSide, matCardSide, front, matCardSide]);
+  mesh.castShadow = true; ink(mesh);
+  const hinge = new THREE.Group(); hinge.add(mesh);
+  const redrawCard = (fn) => { if (fn) draw = fn; ctx.clearRect(0, 0, cv.width, cv.height); draw(ctx, cv.width, cv.height); tex.needsUpdate = true; };
+  redrawCard(); DRAWABLES.push(() => redrawCard());
+  return { hinge, mesh, redraw: redrawCard };
+}
+// 卡片绘制：底色 + 居中富文本
+const cardText = (str, { bg = C.card, fg = C.ink, size = 0.5 } = {}) => (ctx, w, h) => {
+  rr(ctx, 3, 3, w - 6, h - 6, Math.min(w, h) * 0.12); ctx.fillStyle = bg; ctx.fill();
+  let fs = h * size, lay = layout(ctx, str, fs, 1e5, fs * 1.5);
+  if (lay.w > w - 24) { fs *= (w - 24) / lay.w; lay = layout(ctx, str, fs, 1e5, fs * 1.5); }
+  drawLay(ctx, lay, 12, (h - lay.h) / 2, fg, 'center', w - 24);
+};
+function floatCard(w, h, tilt = -0.3) {
+  const c = card(w, h, cardText(''));
+  c.hinge.rotation.x = tilt; c.hinge.scale.setScalar(0.001); c.hinge.visible = false;
+  c.show = async (str, opt, ctl) => {
+    c.redraw(cardText(str, opt)); c.hinge.visible = true;
+    await tween(480, p => c.hinge.scale.setScalar(Math.max(.001, p)), ease.back, ctl);
+  };
+  c.hide = async ctl => {
+    await tween(260, p => c.hinge.scale.setScalar(Math.max(.001, 1 - p)), ease.io, ctl);
+    c.hinge.visible = false;
+  };
+  c.reset = () => { c.hinge.scale.setScalar(.001); c.hinge.visible = false; };
+  return c;
+}
+function makePin(letter, { orange = false, height = 2.4, left = false } = {}) {
+  const g = new THREE.Group();
+  const ball = hull(M(new THREE.SphereGeometry(0.11, 24, 16), orange ? matOrange : matCream), 1.14);
+  ball.position.y = 0.06; g.add(ball);
+  const stick = M(new THREE.CylinderGeometry(0.026, 0.026, height, 10), matInk); stick.position.y = height / 2; g.add(stick);
+  const flagDraw = v => (ctx, w, h) => {
+    rr(ctx, 3, 3, w - 6, h - 6, 14); ctx.fillStyle = orange ? C.orange : C.card; ctx.fill();
+    text(ctx, letter, 22, h * 0.74, `italic bold ${h * 0.68 | 0}px ${F_MATH}`, orange ? '#fff' : C.ink);
+    text(ctx, v, w - 20, h * 0.72, `${h * 0.48 | 0}px ${F_MATH}`, orange ? '#fff' : C.soft, 'right');
+  };
+  const flag = card(1.0, 0.56, flagDraw(''));
+  flag.mesh.position.x = (left ? -1 : 1) * (0.5 + 0.03);
+  flag.hinge.position.y = height - 0.56; flag.hinge.rotation.x = -0.42;
+  g.add(flag.hinge);
+  return { g, set: v => flag.redraw(flagDraw(v)), meshes: [ball, stick, flag.mesh] };
+}
+// 数轴（立体）：横梁 + 箭头 + 刻度 + 数字卡片
+function buildAxis(root, pieces, hiZero = true) {
+  const bg = new THREE.BoxGeometry(2 * LEN, BAR_H, 0.16); bg.translate(0, BAR_H / 2, 0);
+  const bar = ink(M(bg, matCream)); bar.position.z = ZL; root.add(bar);
+  pieces.push({ obj: bar, kind: 'grow', delay: 0 });
+  const cone = hull(M(new THREE.ConeGeometry(0.17, 0.46, 28).rotateZ(-Math.PI / 2), matInk), 1.05);
+  cone.position.set(LEN + 0.22, BAR_H / 2, ZL); root.add(cone);
+  pieces.push({ obj: cone, kind: 'scale', delay: .15 });
+  const tg = new THREE.CylinderGeometry(0.022, 0.022, 0.26, 8); tg.translate(0, 0.13, 0);
+  for (let n = -NMAX; n <= NMAX; n++) {
+    const tick = M(tg, matInk, false); tick.position.set(n * UNIT, BAR_H, ZL); root.add(tick);
+    pieces.push({ obj: tick, kind: 'grow', delay: .1 + Math.abs(n) * .03 });
+    const hot = n === 0 && hiZero;
+    const c = card(0.5, 0.36, cardText(fmt(n), { bg: hot ? C.orange : C.card, fg: hot ? '#fff' : C.ink, size: .66 }), 400);
+    c.mesh.castShadow = false; c.hinge.position.set(n * UNIT, 0, ZL + 0.36); root.add(c.hinge);
+    pieces.push({ obj: c.hinge, kind: 'card', rot: -0.6, delay: .2 + Math.abs(n) * .04 });
+  }
+  return { bar, cone };
+}
+function applyPop(pieces, P) {
+  for (const pc of pieces) {
+    const lp = clamp((P - pc.delay * 0.45) / 0.55, 0, 1);
+    pc.obj.visible = lp > 0.001;
+    if (pc.kind === 'grow') pc.obj.scale.y = Math.max(0.001, ease.out(lp));
+    else if (pc.kind === 'scale') pc.obj.scale.setScalar(Math.max(0.001, ease.back(lp)));
+    else pc.obj.rotation.x = -Math.PI / 2 + ((pc.rot ?? 0) + Math.PI / 2) * ease.back(lp);
+  }
+}
+// 立起后模型整体升离书页，悬空展示
+function contentRoot() {
+  const root = new THREE.Group(); root.position.set(W / 2, T + 0.004, 0); root.visible = false; book.add(root); return root;
+}
+function setLift(root, e) { root.position.y = T + 0.004 + LIFT * e; }
+function makeWalker(root) {
+  const w = hull(M(new THREE.SphereGeometry(0.13, 24, 16), matOrange), 1.12); w.visible = false; root.add(w); return w;
+}
+const hop = (w, x0, x1, ctl, ms = 380) => tween(ms, p => {
+  w.position.set(lerp(x0, x1, p), BAR_H + 0.13 + Math.sin(p * Math.PI) * 0.42 * Math.max(.4, Math.abs(x1 - x0) / UNIT), ZL);
+}, ease.lin, ctl);
+const bob = (obj, ctl, h = 0.25) => { const y0 = obj.position.y; return tween(520, p => obj.position.y = y0 + Math.sin(p * Math.PI) * h, ease.lin, ctl); };
+const pulse = (obj, ctl, s = 1.5, ms = 600) => tween(ms, p => obj.scale.setScalar(1 + (s - 1) * Math.sin(p * Math.PI)), ease.lin, ctl);
+// 小球每落地一次，头顶冒出累计的格数（1、2、3……）
+function makeCounters(root, n = 6) {
+  const cards = Array.from({ length: n }, () => { const c = floatCard(0.42, 0.4); root.add(c.hinge); return c; });
+  return {
+    show(i, x, str, ctl) {
+      const c = cards[i % n]; c.hinge.position.set(x, BAR_H + 0.42, ZL + 0.12);
+      c.show(`{o:${str}}`, { size: .66 }, ctl).catch(() => {});
+    },
+    clear() { cards.forEach(c => c.reset()); },
+  };
+}
+
+/* ---- 第 1 节立体：数轴三要素 ---- */
+function makeLineScene() {
+  const root = contentRoot(), pieces = [];
+  const { cone } = buildAxis(root, pieces, true);
+  const disc = ink(M(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 40), matOrange), 30); disc.position.set(0, 0.02, ZL); root.add(disc);
+  pieces.push({ obj: disc, kind: 'scale', delay: .3 });
+  const oCard = card(0.44, 0.44, cardText('O', { size: .62 })); oCard.hinge.position.set(-0.36, 0, ZL - 0.2); root.add(oCard.hinge);
+  pieces.push({ obj: oCard.hinge, kind: 'card', rot: -0.35, delay: .5 });
+  // 单位长度拱
+  const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, BAR_H, ZL), new THREE.Vector3(UNIT / 2, 2.1, ZL), new THREE.Vector3(UNIT, BAR_H, ZL));
+  const arch = M(new THREE.TubeGeometry(curve, 32, 0.05, 10), matOrange); root.add(arch);
+  pieces.push({ obj: arch, kind: 'grow', delay: .6 });
+  const uCard = card(1.3, 0.42, cardText('单位长度', { size: .5 })); uCard.hinge.position.set(UNIT / 2, 1.3, ZL - 0.05); root.add(uCard.hinge);
+  pieces.push({ obj: uCard.hinge, kind: 'card', rot: -0.5, delay: .75 });
+  // 正方向箭头（立起来的纸板箭头）
+  const sh = new THREE.Shape();
+  sh.moveTo(0, -0.09); sh.lineTo(1.5, -0.09); sh.lineTo(1.5, -0.24); sh.lineTo(1.95, 0); sh.lineTo(1.5, 0.24); sh.lineTo(1.5, 0.09); sh.lineTo(0, 0.09); sh.closePath();
+  const arrow = ink(M(new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: false }), matOrange), 30);
+  const arrowG = new THREE.Group(); arrow.position.set(0, 1.05, 0); arrowG.add(arrow);
+  const dCard = card(1.1, 0.4, cardText('正方向', { size: .52 })); dCard.hinge.position.set(1.0, 0.5, 0.03); arrowG.add(dCard.hinge);
+  arrowG.position.set(2.2, 0, ZL - 0.6); root.add(arrowG);
+  pieces.push({ obj: arrowG, kind: 'card', rot: -0.25, delay: .7 });
+  // P / Q
+  const P = makePin('P', { height: 2.1 }), Q = makePin('Q', { height: 2.1, left: true });
+  P.set('3'); Q.set('−2');
+  P.g.position.set(3 * UNIT, BAR_H, ZL); Q.g.position.set(-2 * UNIT, BAR_H, ZL);
+  root.add(P.g, Q.g);
+  pieces.push({ obj: P.g, kind: 'card', rot: 0, delay: .85 }, { obj: Q.g, kind: 'card', rot: 0, delay: .95 });
+  // 原点标记：悬在 0 上方的橙色圆环 + 向下的指针
+  const oMark = new THREE.Group();
+  const ring = M(new THREE.TorusGeometry(0.24, 0.05, 12, 40), matOrange);
+  const tip = hull(M(new THREE.ConeGeometry(0.09, 0.22, 20).rotateZ(Math.PI), matOrange), 1.1);
+  ring.position.y = 0.42; tip.position.y = 0.11; oMark.add(ring, tip);
+  oMark.position.set(0, BAR_H + 0.1, ZL + 0.02); oMark.visible = false; root.add(oMark);
+  const counters = makeCounters(root);
+  const walker = makeWalker(root);
+  const setStep = k => { S.step[1] = k; redraw(1, 'L'); narrate(1, k); };
+  return {
+    root, pieces,
+    reset() { walker.visible = false; disc.scale.setScalar(1); arch.scale.setScalar(1); arrowG.position.x = 2.2; oMark.visible = false; counters.clear(); setStep(0); },
+    async play(ctl) {
+      setStep(1);
+      oMark.visible = true;
+      await tween(550, p => oMark.scale.setScalar(Math.max(0.001, p)), ease.back, ctl);
+      await Promise.all([pulse(disc, ctl, 1.7, 700), pulse(ring, ctl, 1.35, 700)]);
+      await Promise.all([pulse(disc, ctl, 1.4, 500), pulse(ring, ctl, 1.25, 500)]);
+      await bob(oCard.hinge, ctl);
+      await wait(400, ctl); await speakWait(ctl);
+      setStep(2);
+      for (let k = 0; k < 2; k++) {
+        await tween(700, p => { arrowG.position.x = 2.2 + Math.sin(p * Math.PI) * 0.5; cone.scale.setScalar(1 + .4 * Math.sin(p * Math.PI)); }, ease.lin, ctl);
+      }
+      await wait(300, ctl); await speakWait(ctl);
+      setStep(3);
+      walker.position.set(0, BAR_H + 0.13, ZL); walker.visible = true;
+      await tween(500, p => arch.scale.y = 1 + 0.3 * Math.sin(p * Math.PI), ease.lin, ctl);
+      for (let n = 0; n < 3; n++) { await hop(walker, n * UNIT, (n + 1) * UNIT, ctl); counters.show(n, (n + 1) * UNIT, n + 1, ctl); }
+      await bob(P.g, ctl, .3);
+      await wait(300, ctl); await speakWait(ctl);
+      setStep(4); counters.clear();
+      for (let n = 3, c = 0; n > -2; n--, c++) { await hop(walker, n * UNIT, (n - 1) * UNIT, ctl, 340); counters.show(c, (n - 1) * UNIT, c + 1, ctl); }
+      await bob(Q.g, ctl, .3);
+      await wait(600, ctl); await speakWait(ctl);
+      walker.visible = false; setStep(0);
+    },
+  };
+}
+
+/* ---- 第 2、3 节立体：对折求中点 ---- */
+function makeMidScene(getAB, onStep, abs) {
+  const root = contentRoot(), pieces = [];
+  buildAxis(root, pieces, false);
+  const counters = makeCounters(root);
+  const A = makePin('A'), B = makePin('B'), Mp = makePin('M', { orange: true, height: 3.1 });
+  root.add(A.g, B.g, Mp.g);
+  pieces.push({ obj: A.g, kind: 'card', rot: 0, delay: .6 }, { obj: B.g, kind: 'card', rot: 0, delay: .7 });
+  // 彩带（左半固定，右半绕折痕翻折）
+  const fold = new THREE.Group(); root.add(fold);
+  const gl = new THREE.BoxGeometry(1, RIB_T, RIB_D); gl.translate(-0.5, 0, 0);
+  const gr = new THREE.BoxGeometry(1, RIB_T, RIB_D); gr.translate(0.5, 0, 0);
+  const ribL = ink(M(gl, matOrange)), hingeR = new THREE.Group(), ribR = ink(M(gr, matOrange));
+  hingeR.position.y = RIB_T * 1.2; ribR.position.y = -RIB_T * 1.2; hingeR.add(ribR); fold.add(ribL, hingeR);
+  const lblAB = floatCard(2.5, 0.5), lblHalf = floatCard(2.9, 0.5), lblF = floatCard(3.6, 1.0, -0.3), lblL = floatCard(1.3, 0.44), lblR = floatCard(1.3, 0.44);
+  root.add(lblAB.hinge, lblHalf.hinge, lblF.hinge, lblL.hinge, lblR.hinge);
+  const walker = makeWalker(root);
+  const X = v => v * UNIT;
+  function setRib(len, total) {
+    const half = total / 2;
+    ribL.scale.x = Math.max(0.001, Math.min(len, half)); ribL.position.x = ribL.scale.x - half;
+    ribR.visible = len > half + 1e-4; ribR.scale.x = Math.max(0.001, len - half);
+  }
+  function place() {
+    const { a, b } = getAB();
+    A.set(fmt(a)); B.set(fmt(b));
+    A.g.position.set(X(a), BAR_H, ZL); B.g.position.set(X(b), BAR_H, ZL - (a === b ? 0.0 : 0));
+    B.g.position.z = ZL + (a === b ? 0.3 : 0);
+  }
+  function reset() {
+    place(); fold.visible = false; hingeR.rotation.z = 0; ribR.material = matOrange;
+    Mp.g.visible = false; walker.visible = false; counters.clear();
+    [lblAB, lblHalf, lblF, lblL, lblR].forEach(l => l.reset());
+  }
+  reset();
+  return {
+    root, pieces, place, reset, A, B,
+    async play(ctl) {
+      reset();
+      const { a, b } = getAB(), lo = Math.min(a, b), hi = Math.max(a, b), d = hi - lo, m = (a + b) / 2, total = X(d);
+      onStep(1);
+      await Promise.all([bob(A.g, ctl), bob(B.g, ctl)]);
+      if (d > 0) {
+        fold.position.set(X(m), RIB_Y, ZL); fold.visible = true; setRib(0, total);
+        await tween(500 + d * 110, p => setRib(p * total, total), ease.io, ctl);
+        lblAB.hinge.position.set(X(m), RIB_Y - 0.6, ZL + 0.5);
+        await lblAB.show(abs ? `AB = |b − a| = {o:${fmt(d)}}` : `AB = b − a = {o:${fmt(d)}}`, { size: .5 }, ctl);
+      }
+      await wait(1300, ctl); await speakWait(ctl); onStep(1.5);
+      if (d > 0) await lblAB.hide(ctl);
+      onStep(2);
+      if (d > 0) {
+        ribR.material = matOrangeD;
+        await tween(1400, p => hingeR.rotation.z = Math.PI * p, ease.io, ctl);
+        lblHalf.hinge.position.set(X((lo + m) / 2), RIB_Y - 0.6, ZL + 0.5);
+        await lblHalf.show(`每一半 = ${fmt(d)} ÷ 2 = {o:${fmt(d / 2)}}`, { size: .5 }, ctl);
+        await wait(1300, ctl);
+        await lblHalf.hide(ctl);
+      } else await wait(800, ctl);
+      await speakWait(ctl); onStep(2.5);
+      onStep(3);
+      // 中点小旗从折痕处落下
+      Mp.set(fmt(m)); Mp.g.position.set(X(m), BAR_H + 4.4, ZL - 0.02); Mp.g.rotation.x = 0; Mp.g.visible = true;
+      await tween(950, p => Mp.g.position.y = BAR_H + 4.4 * (1 - p), ease.bounce, ctl);
+      if (d > 0) await tween(1000, p => hingeR.rotation.z = Math.PI * (1 - p), ease.io, ctl);
+      // 小球从 A 出发走 AM 到 M
+      walker.position.set(X(lo), BAR_H + 0.13, ZL); walker.visible = true;
+      for (let v = lo, c = 0; v < m - 1e-6; c++) { const nv = Math.min(m, v + 1); await hop(walker, X(v), X(nv), ctl); counters.show(c, X(nv), fmt(nv - lo), ctl); v = nv; }
+      await wait(250, ctl); walker.visible = false;
+      await speakWait(ctl); onStep(3.5);
+      onStep(4); counters.clear();
+      await wait(1500, ctl); subLine(2);
+      await wait(1500, ctl); subLine(3);
+      lblF.hinge.position.set(X(m), BAR_H + 3.35, ZL - 0.05);
+      const fp = lblF.show(`m = ⟦a + b¦2⟧ = ⟦${fmt(a)} + ${paren(b)}¦2⟧ = {o:${fmt(m)}}`, { size: .36 }, ctl);
+      if (total / 2 > 1.35) {
+        lblL.hinge.position.set(X((lo + m) / 2), RIB_Y - 0.55, ZL + 0.5);
+        lblR.hinge.position.set(X((m + hi) / 2), RIB_Y - 0.55, ZL + 0.5);
+        lblL.show(`AM = ${fmt(d / 2)}`, { size: .52 }, ctl); lblR.show(`MB = ${fmt(d / 2)}`, { size: .52 }, ctl);
+      }
+      await fp;
+      await wait(900, ctl); await speakWait(ctl);
+      onStep(5);
+    },
+  };
+}
+
+/* ================================================================
+   组装：各页立体场景
+   ================================================================ */
+let SCENES = [];
+/* ---- 讲解卡：播放时在屏幕上正对用户显示当前步骤 ---- */
+const LINE_NARR = [
+  { t: '原点 O', b: '数轴上表示 0 的点叫做原点，它把数轴分成正、负两部分。', f: '原点 O 表示 {o:0}' },
+  { t: '正方向', b: '箭头所指的方向是正方向，通常取向右。越往右，表示的数越大。', f: '−2 < 0 < 3' },
+  { t: '单位长度', b: '相邻两个刻度之间的距离都相等。小球从原点向右跳 3 个单位长度，到达点 P。', f: '点 P 表示 {o:3}' },
+  { t: '读一读', b: '再从 P 向左跳 5 个单位长度，到达点 Q。原点右边的点表示正数，左边的点表示负数。', f: '点 Q 表示 {o:−2}' },
+];
+function midNarr(a, b, abs) {
+  const lo = Math.min(a, b), d = Math.abs(b - a), m = (a + b) / 2;
+  return [
+    abs ? { t: '量距离', b: '在 A、B 两面小旗之间拉一条彩带，彩带的长度就是两点之间的距离。不知道谁在左边时，取绝对值，距离总是正数。',
+      f: `AB = |b − a| = |${fmt(b)} − ${paren(a)}| = {o:${fmt(d)}}` }
+      : { t: '量距离', b: '在 A、B 两面小旗之间拉一条彩带，彩带的长度就是两点之间的距离。B 在右边，用右边的数减左边的数。',
+      f: `AB = b − a = ${fmt(b)} − ${paren(a)} = {o:${fmt(d)}}` },
+    { t: '对折平分', b: '把彩带从中间对折，两半完全重合——说明两半一样长，每一半都是 AB 的一半。',
+      f: `每一半 = ⟦AB¦2⟧ = ⟦${fmt(d)}¦2⟧ = {o:${fmt(d / 2)}}` },
+    { t: '折痕落下', b: `折痕的位置就是中点 M，所以 AM = MB = ${fmt(d / 2)}。从左端点出发向右走 ${fmt(d / 2)} 个单位，正好到达 M。`,
+      f: `m = ${fmt(lo)} + ${fmt(d / 2)} = {o:${fmt(m)}}` },
+    { t: '中点公式', b: '用字母写出“从 A 走 AB 的一半”，再通分化简：',
+      f: [`m = a + ⟦b − a¦2⟧`, `= ⟦2a + b − a¦2⟧`, `= ⟦a + b¦2⟧ = ⟦${fmt(a)} + ${paren(b)}¦2⟧ = {o:${fmt(m)}}`],
+      tail: '所以中点表示的数，就是两个端点表示的数的平均数。' },
+  ];
+}
+const NARR = { 1: () => LINE_NARR, 2: () => midNarr(-2, 4, false), 3: () => midNarr(S.a, S.b, true) };
+function narrate(i, k) {
+  if (!k || !NARR[i]) return;
+  const s = NARR[i]()[k - 1];
+  S.sub = { i, k, n: Array.isArray(s.f) ? 1 : 99 }; redraw(i, 'R');
+  const f = [].concat(s.f).map(spoken).join('，');
+  speak(`第${'一二三四'[k - 1]}步，${s.t}。${spoken(s.b)}${f}。${s.tail || ''}`);
+}
+// 多行公式逐行出现
+function subLine(n) { if (S.sub) { S.sub.n = n; redraw(S.sub.i, 'R'); } }
+function hideNarr() {
+  stopSpeech();
+  if (S.sub) { const i = S.sub.i; S.sub = null; redraw(i, 'R'); }
+}
+
+/* ---- 语音朗读（Web Speech API） ---- */
+const TTS = window.speechSynthesis || null;
+let voiceOn = true, speaking = false, speakTimer = 0, zhVoice = null, curUtter = null;
+try { voiceOn = localStorage.getItem('popbook-voice') !== 'off'; } catch (e) {}
+function pickVoice() {
+  if (!TTS) return;
+  const vs = TTS.getVoices().filter(v => /^zh(-|_)?(CN|Hans)?/i.test(v.lang) && !/HK|TW/i.test(v.lang));
+  zhVoice = vs.find(v => /Xiaoxiao|Yunxi|Natural|Online/i.test(v.name)) || vs.find(v => /Google/i.test(v.name)) || vs[0] || null;
+}
+if (TTS) { pickVoice(); TTS.addEventListener?.('voiceschanged', pickVoice); }
+// 把公式写法转成适合朗读的中文
+function spoken(f) {
+  return f.replace(/[{][a-z]:|[}]/g, '')
+    .replace(/⟦([^¦]+)¦([^⟧]+)⟧/g, (_, n, dn) => {
+      const plus = n.includes('+'), minus = /\s−\s/.test(n);
+      if (plus && minus) return ` ${n}，整体除以 ${dn} `;
+      if (plus || minus) return ` ${n} 的${plus ? '和' : '差'}除以 ${dn} `;
+      return ` ${dn}分之${n} `;
+    })
+    .replace(/\|([^|]+)\|/g, ' $1的绝对值 ')
+    .replace(/ − /g, ' 减 ').replace(/−/g, '负')
+    .replace(/\+/g, ' 加 ').replace(/=/g, ' 等于 ').replace(/÷/g, ' 除以 ').replace(/</g, ' 小于 ')
+    .replace(/[()]/g, '').replace(/\s+/g, ' ').trim();
+}
+function speak(text) {
+  const busy = TTS && (TTS.speaking || TTS.pending);
+  stopSpeech();
+  if (!TTS || !voiceOn) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.rate = 1.0; u.pitch = 1.05;
+  if (zhVoice) u.voice = zhVoice;
+  // cancel() 会异步触发上一句的 onerror，只认当前这句的结束
+  curUtter = u;
+  u.onend = u.onerror = () => { if (curUtter === u) { speaking = false; clearTimeout(speakTimer); } };
+  speaking = true;
+  // 兜底：个别浏览器不触发 onend 时，按字数估算时长后放行
+  speakTimer = setTimeout(() => { speaking = false; }, 2500 + text.length * 260);
+  // Chrome：cancel() 后立刻 speak() 可能被吞掉，稍等再说；resume() 防止引擎卡在暂停态
+  const go = () => { if (curUtter === u) { TTS.resume?.(); TTS.speak(u); } };
+  if (busy) setTimeout(go, 120); else go();
+}
+function stopSpeech() {
+  speaking = false; curUtter = null; clearTimeout(speakTimer);
+  if (TTS && (TTS.speaking || TTS.pending)) TTS.cancel();
+}
+function speakWait(ctl) {
+  return new Promise((res, rej) => {
+    const chk = () => ctl.cancelled ? rej(CANCEL) : !speaking ? res() : requestAnimationFrame(chk);
+    chk();
+  });
+}
+function setVoice(on) {
+  voiceOn = on;
+  try { localStorage.setItem('popbook-voice', on ? 'on' : 'off'); } catch (e) {}
+  if (!on) stopSpeech();
+  $('bVoice').classList.toggle('muted', !on);
+  $('bVoice').title = on ? '语音讲解：开（点击静音）' : '语音讲解：关（点击开启）';
+}
+function buildScenes() {
+  SCENES = [
+    null,
+    makeLineScene(),
+    makeMidScene(() => ({ a: -2, b: 4 }), k => {
+      // 2 号场景：左页高亮步骤 + 右页步骤条
+      if (k === Math.floor(k)) { S.step[2] = k > 4 ? 0 : k; redraw(2, 'L'); redraw(2, 'R'); narrate(2, S.step[2]); }
+    }),
+    makeMidScene(() => ({ a: S.a, b: S.b }), k => {
+      // 3 号场景：每完成一步揭晓一项计算结果
+      if (k === 1.5) S.revealed = Math.max(S.revealed, 1);
+      else if (k === 2.5) S.revealed = Math.max(S.revealed, 2);
+      else if (k === 3.5) S.revealed = Math.max(S.revealed, 3);
+      else if (k === 5) S.revealed = 4;
+      if (k === Math.floor(k)) { S.step[3] = k > 4 ? 0 : k; narrate(3, S.step[3]); }
+      redraw(3, 'L');
+    }, true),
+  ];
+}
+
+/* ================================================================
+   交互：打开、翻页、立体化、播放
+   ================================================================ */
+let playCtl = null;
+function cancelPlay() {
+  if (playCtl) playCtl.cancelled = true;
+  hideNarr();
+  playCtl = null; S.playing = false;
+  const sc = SCENES[S.spread];
+  if (sc) sc.reset();
+  if (S.spread === 2) { S.step[2] = 0; redraw(2, 'L'); redraw(2, 'R'); }
+  if (S.spread === 3) { S.step[3] = 0; redraw(3, 'L'); }
+  ui();
+}
+async function setBuilt(on, fast = false) {
+  const i = S.spread, sc = SCENES[i];
+  if (!sc || S.built[i] === on || S.busy) return;
+  if (!on) cancelPlay();
+  S.busy = true; S.built[i] = on; redraw(i, 'R'); ui();
+  applyPop(sc.pieces, on ? 0 : 1); sc.root.visible = true;
+  S.view = on ? 'anim' : 'read';
+  await Promise.all([
+    tween(fast ? 600 : 1600, p => { const q = on ? p : 1 - p; applyPop(sc.pieces, q); setLift(sc.root, ease.io(q)); }, ease.lin),
+    flyTo(on ? animView() : openView(), fast ? 600 : 1300),
+  ]);
+  if (!on) sc.root.visible = false;
+  S.busy = false; ui();
+}
+async function play() {
+  const sc = SCENES[S.spread];
+  if (!sc || S.busy) return;
+  if (!S.built[S.spread]) await setBuilt(true);
+  cancelPlay();
+  const ctl = playCtl = { cancelled: false };
+  S.playing = true; ui();
+  try { await sc.play(ctl); }
+  catch (e) { if (e !== CANCEL) console.error(e); }
+  if (playCtl === ctl) { playCtl = null; S.playing = false; ui(); }
+}
+async function flip(dir, fast = false) {
+  const cur = S.spread, next = cur + dir;
+  if (S.busy || !S.opened || next < 0 || next >= SPREADS.length) return;
+  if (S.built[cur]) await setBuilt(false, true);
+  cancelPlay();
+  const lift = peekLast === dir ? peekCur : 0;
+  peek = peekLast = 0; peekCur = 0;
+  S.busy = true; closeMenu(); ui();
+  const P = PAGE_CANVAS;
+  if (dir > 0) { useImage(texFF, P[cur].R); useImage(texFB, P[next].L); useImage(texR, P[next].R); }
+  else { useImage(texFF, P[next].R); useImage(texFB, P[cur].L); useImage(texL, P[next].L); }
+  flipGroup.visible = true;
+  await tween(fast ? 520 : 950, p => {
+    const th = dir > 0 ? p * Math.PI : (1 - p) * Math.PI;
+    const c0 = PEEK_CURL * lift * (1 - p);
+    setFlip(th, (dir > 0 ? -1 : 1) * 0.9 * Math.sin(p * Math.PI) + (dir > 0 ? c0 : -c0));
+  }, ease.io);
+  if (dir > 0) useImage(texL, P[next].L); else useImage(texR, P[next].R);
+  flipGroup.visible = false;
+  S.spread = next; S.busy = false; ui();
+}
+async function goTo(target) {
+  closeMenu();
+  while (S.spread !== target && !S.busy) await flip(Math.sign(target - S.spread), Math.abs(target - S.spread) > 1);
+}
+
+// ---- 相机
+const controls = new OrbitControls(camera, renderer.domElement);
+function openView() {
+  const elev = 0.8, a = innerWidth / innerHeight, f = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const d = Math.max(8.2 / f, 10.9 / (f * a));
+  const target = new THREE.Vector3(0, T, 0.9);
+  return { target, pos: target.clone().add(new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)).multiplyScalar(d)) };
+}
+// 动画视角：仍框住整个跨页（左页同步文字可见），仰角略低，看清升起的模型
+function animView() {
+  const elev = 0.68, a = innerWidth / innerHeight, f = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const d = Math.max(7.6 / f, 10.4 / (f * a));
+  const target = new THREE.Vector3(0, T + 1.0, 1.5);
+  return { target, pos: target.clone().add(new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)).multiplyScalar(d)) };
+}
+function closedView() {
+  const { pos, target } = openView();
+  const d = pos.distanceTo(target) * 0.78, t = new THREE.Vector3(0, 0.6, 0);
+  return { target: t, pos: t.clone().add(new THREE.Vector3(Math.sin(0.35) * Math.cos(1.0), Math.sin(1.0), Math.cos(0.35) * Math.cos(1.0)).multiplyScalar(d)) };
+}
+async function flyTo(view, ms = 1000, extra) {
+  const p0 = camera.position.clone(), t0 = controls.target.clone();
+  await tween(ms, p => { camera.position.lerpVectors(p0, view.pos, p); controls.target.lerpVectors(t0, view.target, p); extra && extra(p); }, ease.io);
+}
+async function openBook() {
+  if (S.opened || S.busy) return;
+  S.busy = true; hint(''); controls.enabled = false;
+  await flyTo(openView(), 1900, p => setOpen(p));
+  controls.enabled = true; S.opened = true; S.busy = false;
+  document.getElementById('tb').classList.remove('off');
+  ui();
+}
+
+/* ---- 指针：点击 / 拖拽小旗 ---- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(e, objs) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(objs, true).find(h => h.object.isMesh);
+}
+let down = null, drag = null;
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), tmpV = new THREE.Vector3();
+function dragTargets() {
+  const sc = SCENES[S.spread];
+  return S.spread === 3 && S.built[3] && !S.busy ? [sc.A.g, sc.B.g] : [];
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  down = { x: e.clientX, y: e.clientY };
+  const tg = dragTargets();
+  if (tg.length) {
+    const hit = pick(e, tg);
+    if (hit) {
+      let o = hit.object; while (o && o !== tg[0] && o !== tg[1]) o = o.parent;
+      drag = o === tg[0] ? 'a' : 'b'; controls.enabled = false;
+      renderer.domElement.setPointerCapture(e.pointerId);
+      dragPlane.constant = -(T + 0.004 + LIFT + BAR_H);
+    }
+  }
+}, { capture: true });
+renderer.domElement.addEventListener('pointermove', e => {
+  if (drag) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (ray.ray.intersectPlane(dragPlane, tmpV)) {
+      SCENES[3].root.worldToLocal(tmpV);
+      const v = clamp(Math.round(tmpV.x / UNIT), -NMAX, NMAX);
+      if (v !== S[drag]) setAB(drag, v);
+    }
+    return;
+  }
+  let cur = '', z = null;
+  if (!S.opened) cur = pick(e, [book]) ? 'pointer' : '';
+  else if (!S.busy) {
+    if (dragTargets().length && pick(e, dragTargets())) cur = 'grab';
+    else { z = zoneAt(e); if (z) cur = 'pointer'; }
+  }
+  setPeek(z === 'next' ? 1 : z === 'prev' ? -1 : 0);
+  renderer.domElement.style.cursor = cur;
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  if (drag) { drag = null; controls.enabled = true; return; }
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+  if (!S.opened) { if (pick(e, [book])) openBook(); return; }
+  if (S.busy) return;
+  const z = zoneAt(e);
+  if (z === 'build') setBuilt(true);
+  else if (z === 'next') flip(1);
+  else if (z === 'prev') flip(-1);
+});
+renderer.domElement.addEventListener('pointerleave', () => setPeek(0));
+
+// 页面点击区域：插图区 → 立体化；左页外侧 → 上一页；右页插图以外 → 下一页
+function zoneAt(e) {
+  if (!S.opened || S.busy) return null;
+  const sc = SCENES[S.spread];
+  const objs = [leftPage, rightPage]; if (sc && sc.root.visible) objs.push(sc.root);
+  const h = pick(e, objs);
+  if (!h || !h.uv) return null;
+  const x = (h.uv.x - 0.5) * W, z = (0.5 - h.uv.y) * H;
+  if (h.object === leftPage) return S.spread > 0 && x < 0.5 ? 'prev' : null;
+  if (h.object !== rightPage) return null;
+  const inFig = sc && Math.abs(x) < 4.9 && z > ZL - 3.4 && z < ZL + 0.9;
+  if (inFig) return S.built[S.spread] ? null : 'build';
+  return S.spread < SPREADS.length - 1 && x > -0.5 ? 'next' : null;
+}
+
+// 悬停翻页区时，页角轻轻掀起
+const PEEK_CURL = 0.32;
+let peek = 0, peekLast = 0, peekCur = 0;
+function restorePages() { useImage(texL, PAGE_CANVAS[S.spread].L); useImage(texR, PAGE_CANVAS[S.spread].R); }
+function setPeek(d) {
+  if (S.busy || (d > 0 && S.built[S.spread])) d = 0;
+  if (d === peek) return;
+  peek = d;
+  if (!d) return;
+  if (peekLast && peekLast !== d) restorePages();
+  peekLast = d;
+  const P = PAGE_CANVAS, i = S.spread;
+  if (d > 0) { useImage(texFF, P[i].R); useImage(texFB, P[i + 1].L); useImage(texR, P[i + 1].R); }
+  else { useImage(texFF, P[i - 1].R); useImage(texFB, P[i].L); useImage(texL, P[i - 1].L); }
+}
+function updatePeek() {
+  if (S.busy || !peekLast) return;
+  peekCur += ((peek ? 1 : 0) - peekCur) * 0.16;
+  if (!peek && peekCur < 0.004) { peekCur = 0; peekLast = 0; flipGroup.visible = false; restorePages(); return; }
+  flipGroup.visible = true;
+  if (peekLast > 0) setFlip(0, PEEK_CURL * peekCur);
+  else setFlip(Math.PI, -PEEK_CURL * peekCur);
+}
+
+function setAB(k, v) {
+  S[k] = clamp(v, -NMAX, NMAX);
+  if (playCtl) cancelPlay();
+  S.revealed = 0; S.step[3] = 0;
+  SCENES[3].place(); SCENES[3].reset();
+  redraw(3, 'L'); redraw(3, 'R'); ui();
+}
+
+/* ================================================================
+   UI
+   ================================================================ */
+const $ = id => document.getElementById(id);
+let hintTimer = 0;
+function hint(s) { const h = $('hint'); if (s) { h.textContent = s; h.classList.remove('off'); } else h.classList.add('off'); }
+function ui() {
+  const i = S.spread, sc = SCENES[i];
+  $('pageLabel').innerHTML = `<b>${SPREADS[i].pn}</b>${SPREADS[i].title}`;
+  $('bPrev').disabled = S.busy || i === 0;
+  $('bNext').disabled = S.busy || i === SPREADS.length - 1;
+  $('bBuild').disabled = !sc || S.busy;
+  $('bBuild').classList.toggle('on', !!S.built[i]);
+  $('bBuild').querySelector('.txt').textContent = S.built[i] ? '平面' : '立体';
+  $('bPlay').disabled = !sc || S.busy;
+  $('bPlay').querySelector('.txt').textContent = S.playing ? '重播' : '播放';
+  $('ab').classList.toggle('hide', i !== 3);
+  $('oa').textContent = fmt(S.a); $('ob').textContent = fmt(S.b);
+  document.querySelectorAll('.menu button').forEach((b, k) => b.classList.toggle('cur', k === i));
+  if (!S.opened) return;
+  clearTimeout(hintTimer);
+  let h = '';
+  if (S.playing) { hint(''); return; }
+  if (sc && !S.built[i] && !S.busy) h = '点击右页插图，让平面图形立起来';
+  else if (i === 3 && S.built[3] && !S.playing && !S.busy) h = '拖动 A、B 小旗，或用工具栏 ± 设置坐标，再点 ▶';
+  else if (sc && S.built[i] && !S.playing && !S.busy) h = '拖动旋转视角 · 点 ▶ 播放动画 · ⟲ 切换阅读视角';
+  else if (i === 0 && !S.busy) h = '点击右页翻到下一页，点击左页回到上一页';
+  hint(h);
+  if (h) hintTimer = setTimeout(() => hint(''), 4200);
+}
+function closeMenu() { $('menu').classList.add('off'); }
+$('menu').innerHTML = SPREADS.map((s, k) => `<button data-i="${k}">${s.title}<i>${s.pn}</i></button>`).join('');
+$('menu').addEventListener('click', e => { const b = e.target.closest('button'); if (b) goTo(+b.dataset.i); });
+$('bMenu').onclick = () => $('menu').classList.toggle('off');
+$('bPrev').onclick = () => flip(-1);
+$('bNext').onclick = () => flip(1);
+$('bBuild').onclick = () => setBuilt(!S.built[S.spread]);
+$('bPlay').onclick = () => play();
+$('bVoice').onclick = () => setVoice(!voiceOn);
+$('bView').onclick = () => {
+  if (S.busy) return;
+  S.view = S.built[S.spread] && S.view !== 'anim' ? 'anim' : 'read';
+  flyTo(S.view === 'anim' ? animView() : openView(), 900);
+};
+document.querySelectorAll('.ab button').forEach(b => b.onclick = () => setAB(b.dataset.k, S[b.dataset.k] + +b.dataset.d));
+addEventListener('keydown', e => {
+  if (!S.opened) { if (e.key === 'Enter' || e.key === ' ') openBook(); return; }
+  if (e.key === 'ArrowRight') flip(1);
+  else if (e.key === 'ArrowLeft') flip(-1);
+  else if (e.key === ' ') { e.preventDefault(); play(); }
+  else if (e.key === 'Enter') setBuilt(!S.built[S.spread]);
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ================================================================
+   启动：等字体 → 绘制 → 渲染循环
+   ================================================================ */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function loadFonts() {
+  const link = $('gfont');
+  await Promise.race([new Promise(r => link.sheet ? r() : link.addEventListener('load', r, { once: true })), sleep(3000)]);
+  redrawAll();   // 第一次绘制：收集用到的字符
+  const sample = [...USED].join('') + '0123456789单位长度正方向原点';
+  const loads = ['400', '700', '900'].map(w => document.fonts.load(`${w} 32px "Noto Serif SC"`, sample))
+    .concat(document.fonts.load(`32px "Ma Shan Zheng"`, sample));
+  await Promise.race([Promise.allSettled(loads), sleep(6000)]);
+}
+
+function frame(now) {
+  runTweens(now);
+  updatePeek();
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+(async () => {
+  Object.assign(controls, {
+    enableDamping: true, dampingFactor: .08, enablePan: false,
+    minDistance: 8, maxDistance: 46, minPolarAngle: 0.12, maxPolarAngle: 1.3,
+    minAzimuthAngle: -1.3, maxAzimuthAngle: 1.3,
+  });
+  const v = closedView(); camera.position.copy(v.pos); controls.target.copy(v.target);
+  buildScenes();
+  await loadFonts();
+  redrawAll();
+  useImage(texL, PAGE_CANVAS[0].L); useImage(texR, PAGE_CANVAS[0].R);
+  requestAnimationFrame(frame);
+  $('loading').classList.add('off');
+  ui();
+  hint('点击书本，打开它');
+  setVoice(voiceOn);
+  document.fonts.addEventListener('loadingdone', () => redrawAll());
+})();
+</script>
+</body>
+</html>
